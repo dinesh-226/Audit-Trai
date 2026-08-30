@@ -1,4 +1,5 @@
 import React from "react";
+import EventTimeline from "../components/EventTimeline";
 
 function DashboardPage() {
   return (
@@ -40,6 +41,7 @@ function DashboardPage() {
             <input
               type="text"
               placeholder="Enter shipment ID or container ID..."
+              aria-label="Shipment or container ID"
             />
 
             <button type="button">Search</button>
@@ -81,43 +83,7 @@ function DashboardPage() {
         </section>
 
         {/* Event History */}
-        <section className="section">
-          <div className="section-heading">
-            <div>
-              <span className="section-label">EVENT HISTORY</span>
-              <h3>Chronological audit trail</h3>
-            </div>
-          </div>
-
-          <div className="timeline-placeholder">
-            <div className="timeline-item">
-              <span className="timeline-dot" />
-
-              <div>
-                <strong>Container Created</strong>
-                <p>Event will appear here</p>
-              </div>
-            </div>
-
-            <div className="timeline-item">
-              <span className="timeline-dot" />
-
-              <div>
-                <strong>Shipment Event</strong>
-                <p>Event history will be loaded from the Event Store</p>
-              </div>
-            </div>
-
-            <div className="timeline-item">
-              <span className="timeline-dot" />
-
-              <div>
-                <strong>Current State</strong>
-                <p>State will be reconstructed from events</p>
-              </div>
-            </div>
-          </div>
-        </section>
+        <EventTimeline />
 
         {/* Planned Features */}
         <section className="future-grid">
