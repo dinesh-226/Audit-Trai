@@ -3,6 +3,9 @@ require("dotenv").config();
 const app = require("./app");
 const projectRoutes = require('./routes/projects');
 const taskRoutes = require('./routes/tasks');
+const auditLogRoutes = require('./routes/auditLogs');
+
+
 
 
 const connectDB = require("./config/db");
@@ -14,6 +17,7 @@ connectDB();
 
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 
 
 app.listen(PORT, () => {
