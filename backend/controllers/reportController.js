@@ -17,6 +17,21 @@ const getReports = async (req, res) => {
   }
 };
 
+// @desc    Get single report by ID
+// @route   GET /api/reports/:id
+// @access  Private
+const getReportById = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ success: false, message: 'Report not found' });
+    }
+    res.status(200).json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
 // @desc    Generate a new compliance or audit report
 // @route   POST /api/reports
 // @access  Private
@@ -25,8 +40,12 @@ const generateReport = async (req, res) => {
     const { title, reportType = 'SOC2', preset = 'Last 30 Days', format = 'PDF' } = req.body;
 
     const totalEvents = await AuditLog.countDocuments();
-    const criticalEvents = await AuditLog.countDocuments({ severity: 'CRITICAL' });
-    const highEvents = await AuditLog.countDocuments({ severity: 'HIGH' });
+    const criticalEvents = await AuditLog.countDocuments({
+      $or: [{ criticality: 'CRITICAL' }, { riskLevel: 'critical' }, { severity: 'CRITICAL' }]
+    });
+    const highEvents = await AuditLog.countDocuments({
+      $or: [{ criticality: 'HIGH' }, { riskLevel: 'high' }, { severity: 'HIGH' }]
+    });
     const chainCheck = await verifyChainIntegrity();
 
     // Determine compliance score and findings
@@ -93,7 +112,7 @@ const generateReport = async (req, res) => {
 
     await recordAuditLog({
       req,
-      action: 'COMPLIANCE_REPORT_GENERATED',
+      action: 'CREATE',
       actionCategory: 'COMPLIANCE',
       entity: { type: 'Report', id: report._id.toString(), name: report.title },
       details: `Generated ${reportType} compliance report with score ${complianceScore}%.`,
@@ -124,7 +143,11 @@ const downloadReport = async (req, res) => {
 
     const logs = await AuditLog.find().sort({ timestamp: -1 }).limit(100);
     const html = generateHtmlReport(logs, report.title, {
-      generatedBy: `${report.generatedBy.name} (${report.generatedBy.email})`
+      generatedBy: `${report.generatedBy?.name || 'Compliance Officer'} (${report.generatedBy?.email || 'compliance@auditflow.io'})`,
+      reportType: report.reportType,
+      complianceScore: report.summary?.complianceScore || 100,
+      tamperStatus: report.summary?.tamperStatus || 'VERIFIED_CLEAN',
+      findings: report.summary?.findings || []
     });
 
     res.setHeader('Content-Type', 'text/html');
@@ -134,8 +157,38 @@ const downloadReport = async (req, res) => {
   }
 };
 
+// @desc    Delete a compliance report
+// @route   DELETE /api/reports/:id
+// @access  Private
+const deleteReport = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ success: false, message: 'Report not found' });
+    }
+
+    await Report.findByIdAndDelete(req.params.id);
+
+    await recordAuditLog({
+      req,
+      action: 'DELETE',
+      actionCategory: 'COMPLIANCE',
+      entity: { type: 'Report', id: req.params.id, name: report.title },
+      details: `Deleted ${report.reportType} compliance report`,
+      severity: 'MEDIUM',
+      status: 'SUCCESS'
+    });
+
+    res.json({ success: true, message: 'Report deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   getReports,
+  getReportById,
   generateReport,
-  downloadReport
+  downloadReport,
+  deleteReport
 };
