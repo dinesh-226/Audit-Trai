@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import "../styles/DashBoardPage.css";
+import ShipmentSearch from "../components/ShipmentSearch";
 
 type EventItem = {
   number: string;
@@ -37,20 +38,11 @@ const recentEvents: EventItem[] = [
 ];
 
 function DashboardPage() {
-  const [shipmentId, setShipmentId] = useState("");
-  const [selectedShipment, setSelectedShipment] = useState("CNTR-AX4921");
-  const [traceMessage, setTraceMessage] = useState("");
+  const [selectedShipment, setSelectedShipment] =
+    useState("CNTR-AX4921");
 
-  const handleTrace = () => {
-    const value = shipmentId.trim();
-
-    if (!value) {
-      setTraceMessage("ENTER A VALID SHIPMENT OR CONTAINER ID");
-      return;
-    }
-
-    setSelectedShipment(value.toUpperCase());
-    setTraceMessage("TRACE REQUEST READY");
+  const handleShipmentSearch = (shipmentId: string) => {
+    setSelectedShipment(shipmentId.toUpperCase());
   };
 
   return (
@@ -352,11 +344,9 @@ function DashboardPage() {
                 </p>
 
                 <div className="dashboard-trace-tags">
-
                   <span>EVENT SOURCED</span>
                   <span>TRACEABLE</span>
                   <span>APPEND ONLY</span>
-
                 </div>
 
               </div>
@@ -364,45 +354,9 @@ function DashboardPage() {
 
               <div className="dashboard-trace-form">
 
-                <label htmlFor="shipment-search">
-                  SHIPMENT / CONTAINER ID
-                </label>
-
-                <div className="dashboard-trace-input">
-
-                  <input
-                    id="shipment-search"
-                    type="text"
-                    value={shipmentId}
-                    onChange={(event) =>
-                      setShipmentId(event.target.value)
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        handleTrace();
-                      }
-                    }}
-                    placeholder="CNTR-AX4921"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={handleTrace}
-                  >
-                    TRACE →
-                  </button>
-
-                </div>
-
-                <span className="dashboard-trace-hint">
-                  Enter identifier and press TRACE
-                </span>
-
-                {traceMessage && (
-                  <div className="trace-message">
-                    {traceMessage}
-                  </div>
-                )}
+                <ShipmentSearch
+                  onSearch={handleShipmentSearch}
+                />
 
               </div>
 
@@ -514,7 +468,6 @@ function DashboardPage() {
           {/* ================= LOWER GRID ================= */}
 
           <section className="dashboard-lower-grid">
-
 
             {/* RECENT ACTIVITY */}
 
