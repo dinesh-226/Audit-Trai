@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import "../styles/DashBoardPage.css";
+
 import ShipmentSearch from "../components/ShipmentSearch";
+import HistoricalState from "../components/HistoricalState";
 
 type EventItem = {
   number: string;
@@ -115,16 +117,8 @@ function DashboardPage() {
               <span className="nav-active-mark" />
             </NavLink>
 
-            <NavLink
-              to="/analytics"
-              className={({ isActive }) =>
-                `nav-item ${isActive ? "active" : ""}`
-              }
-            >
-              <span className="nav-icon">⌁</span>
-              <span className="nav-label">Analytics</span>
-              <span className="nav-active-mark" />
-            </NavLink>
+          
+              
 
           </nav>
         </div>
@@ -358,6 +352,10 @@ function DashboardPage() {
                   onSearch={handleShipmentSearch}
                 />
 
+                <span className="dashboard-trace-hint">
+                  Enter identifier and press TRACE
+                </span>
+
               </div>
 
             </div>
@@ -465,9 +463,17 @@ function DashboardPage() {
           </section>
 
 
+          {/* ================= HISTORICAL STATE ================= */}
+
+          <HistoricalState
+            shipmentId={selectedShipment}
+          />
+
+
           {/* ================= LOWER GRID ================= */}
 
           <section className="dashboard-lower-grid">
+
 
             {/* RECENT ACTIVITY */}
 

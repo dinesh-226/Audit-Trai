@@ -1,43 +1,45 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
-interface ShipmentSearchProps {
+type ShipmentSearchProps = {
   onSearch: (shipmentId: string) => void;
-}
+};
 
-export default function ShipmentSearch({
-  onSearch,
-}: ShipmentSearchProps) {
+function ShipmentSearch({ onSearch }: ShipmentSearchProps) {
   const [shipmentId, setShipmentId] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
 
     const value = shipmentId.trim();
 
-    if (!value) return;
+    if (!value) {
+      return;
+    }
 
     onSearch(value);
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <label htmlFor="shipment-id">
-        Shipment / Container ID
+      <label htmlFor="shipment-search">
+        SHIPMENT / CONTAINER ID
       </label>
 
-      <div>
+      <div className="dashboard-trace-input">
         <input
-          id="shipment-id"
+          id="shipment-search"
           type="text"
           value={shipmentId}
-          onChange={(e) => setShipmentId(e.target.value)}
-          placeholder="Enter shipment ID..."
+          onChange={(event) => setShipmentId(event.target.value)}
+          placeholder="CNTR-AX4921"
         />
 
         <button type="submit">
-          Search
+          TRACE →
         </button>
       </div>
     </form>
   );
 }
+
+export default ShipmentSearch;
