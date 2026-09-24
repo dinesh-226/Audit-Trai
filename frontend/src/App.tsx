@@ -1,11 +1,10 @@
-import React from "react";
 import { Routes, Route } from "react-router-dom";
 
 import DashboardPage from "./pages/DashboardPage";
 import ShipmentsPage from "./pages/ShipmentsPage";
 import EventsPage from "./pages/EventsPage";
-
-import "./App.css";
+import HistoricalStatePage from "./pages/HistoricalStatePage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 
 function App() {
   return (
@@ -30,6 +29,9 @@ function App() {
         path="/events"
         element={<EventsPage />}
       />
+       
+       <Route path="/history" element={<HistoricalStatePage />} />
+       <Route path="/analytics" element={<AnalyticsPage />} />
 
     </Routes>
   );

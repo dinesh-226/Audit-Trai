@@ -1,0 +1,293 @@
+/* =========================================================
+   ANALYTICS PAGE
+   TRACEGRID INDUSTRIAL LIGHT THEME
+   ========================================================= */
+
+.analytics-page {
+  --tg-bg: #e7e4dc;
+  --tg-surface: #f5f3ed;
+  --tg-dark: #171816;
+  --tg-dark-2: #232421;
+  --tg-ink: #181917;
+  --tg-muted: #77746c;
+  --tg-line: #cbc7bd;
+  --tg-amber: #df9828;
+  --tg-green: #71864d;
+  --tg-red: #a04e40;
+}
+
+.analytics-page .trace-main {
+  max-width: 1500px;
+}
+
+
+/* =========================================================
+   INTRO
+   ========================================================= */
+
+.analytics-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 28px;
+}
+
+.analytics-intro h1 {
+  margin: 0;
+  font-size: 38px;
+  letter-spacing: -1.5px;
+}
+
+.analytics-intro p {
+  max-width: 680px;
+  margin: 12px 0 0;
+  color: var(--tg-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.analytics-revision {
+  min-width: 145px;
+  padding: 14px;
+  background: var(--tg-dark);
+  color: #f4f1e9;
+  border-left: 3px solid var(--tg-amber);
+}
+
+.analytics-revision span,
+.analytics-revision small {
+  display: block;
+  color: #85867f;
+  font-family: monospace;
+  font-size: 7px;
+  letter-spacing: 1.3px;
+}
+
+.analytics-revision strong {
+  display: block;
+  margin: 5px 0;
+  color: #f4f1e9;
+  font-family: monospace;
+  font-size: 15px;
+}
+
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+
+.analytics-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.analytics-summary-card {
+  padding: 18px;
+  background: var(--tg-surface);
+  border: 1px solid var(--tg-line);
+  border-top: 3px solid var(--tg-green);
+}
+
+.analytics-summary-card.alert {
+  border-top-color: var(--tg-amber);
+}
+
+.analytics-summary-card span,
+.analytics-summary-card small {
+  display: block;
+  color: var(--tg-muted);
+  font-family: monospace;
+  font-size: 7px;
+  letter-spacing: 1px;
+}
+
+.analytics-summary-card strong {
+  display: block;
+  margin: 8px 0 5px;
+  font-family: monospace;
+  font-size: 23px;
+  color: var(--tg-ink);
+}
+
+.analytics-summary-card.alert strong {
+  color: var(--tg-amber);
+}
+
+
+/* =========================================================
+   COMMON ANALYTICS PANEL
+   ========================================================= */
+
+.analytics-panel {
+  background: var(--tg-surface);
+  border: 1px solid var(--tg-line);
+  margin-bottom: 16px;
+}
+
+.analytics-panel-header {
+  min-height: 68px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--tg-line);
+}
+
+.analytics-panel-header span {
+  color: var(--tg-muted);
+  font-family: monospace;
+  font-size: 8px;
+  letter-spacing: 1.3px;
+}
+
+.analytics-panel-header h3 {
+  margin: 5px 0 0;
+  font-size: 16px;
+  color: var(--tg-ink);
+}
+
+.analytics-code {
+  color: var(--tg-muted);
+  font-family: monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+
+
+/* =========================================================
+   CHART
+   ========================================================= */
+
+.analytics-chart {
+  padding: 22px 20px 18px;
+}
+
+.analytics-chart.small {
+  padding-top: 18px;
+}
+
+
+/* =========================================================
+   SECONDARY GRID
+   ========================================================= */
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 16px;
+}
+
+
+/* =========================================================
+   FINDINGS
+   ========================================================= */
+
+.analytics-findings {
+  padding: 5px 20px 15px;
+}
+
+.finding-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 17px 0;
+  border-bottom: 1px solid #dad6cd;
+}
+
+.finding-row:last-child {
+  border-bottom: none;
+}
+
+.finding-marker {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.finding-marker.warning {
+  background: #eee4d1;
+  border: 1px solid #dfc38d;
+  color: var(--tg-amber);
+}
+
+.finding-marker.normal {
+  background: #e8ece1;
+  border: 1px solid #c4cfb4;
+  color: var(--tg-green);
+}
+
+.finding-row strong,
+.finding-row span {
+  display: block;
+}
+
+.finding-row strong {
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+
+.finding-row span {
+  color: var(--tg-muted);
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1050px) {
+
+  .analytics-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+@media (max-width: 800px) {
+
+  .analytics-intro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .analytics-revision {
+    width: 100%;
+  }
+
+}
+
+@media (max-width: 600px) {
+
+  .analytics-intro h1 {
+    font-size: 30px;
+  }
+
+  .analytics-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-panel-header {
+    align-items: flex-start;
+    gap: 12px;
+    flex-direction: column;
+  }
+
+  .analytics-chart {
+    padding: 15px 8px;
+  }
+
+}

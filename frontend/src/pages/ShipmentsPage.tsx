@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import "../styles/ShipmentsPage.css";
 

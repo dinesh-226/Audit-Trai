@@ -21,7 +21,9 @@
 }
 
 
-/* ================= GLOBAL ================= */
+/* =========================================================
+   GLOBAL
+   ========================================================= */
 
 * {
   box-sizing: border-box;
@@ -44,7 +46,9 @@ input {
 }
 
 
-/* ================= APP ================= */
+/* =========================================================
+   APP
+   ========================================================= */
 
 .trace-app {
   min-height: 100vh;
@@ -54,20 +58,30 @@ input {
 
   background-image:
     linear-gradient(
-      rgba(24, 25, 23, 0.025) 1px,
+      rgba(24, 25, 23, 0.028) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(24, 25, 23, 0.025) 1px,
+      rgba(24, 25, 23, 0.028) 1px,
       transparent 1px
+    ),
+    radial-gradient(
+      circle at 85% 10%,
+      rgba(223, 152, 40, 0.08),
+      transparent 30%
     );
 
-  background-size: 28px 28px;
+  background-size:
+    28px 28px,
+    28px 28px,
+    auto;
 }
 
 
-/* ================= SIDEBAR ================= */
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
 
 .trace-sidebar {
   width: 255px;
@@ -112,6 +126,15 @@ input {
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 1px;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.trace-brand:hover .brand-mark {
+  transform: rotate(-3deg);
+  box-shadow: 0 0 0 4px rgba(223, 152, 40, 0.08);
 }
 
 .brand-text h1 {
@@ -180,13 +203,18 @@ input {
   color: #969791;
   text-decoration: none;
 
-  transition: 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .nav-item:hover {
   color: #f5f2e9;
   background: var(--tg-dark-2);
   border-color: #353632;
+  transform: translateX(2px);
 }
 
 .nav-item.active {
@@ -247,6 +275,15 @@ input {
   background: #20211f;
 
   border: 1px solid #353632;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.system-card:hover {
+  background: #242522;
+  border-color: #4a4b46;
 }
 
 .system-card-top {
@@ -269,6 +306,8 @@ input {
   background: var(--tg-green);
 
   box-shadow: 0 0 10px rgba(113, 134, 77, 0.4);
+
+  animation: auditPulse 2.4s ease-in-out infinite;
 }
 
 .system-card small {
@@ -294,7 +333,9 @@ input {
 }
 
 
-/* ================= CONTENT ================= */
+/* =========================================================
+   CONTENT
+   ========================================================= */
 
 .trace-content {
   width: calc(100% - 255px);
@@ -304,7 +345,9 @@ input {
 }
 
 
-/* ================= TOPBAR ================= */
+/* =========================================================
+   TOPBAR
+   ========================================================= */
 
 .trace-topbar {
   height: 82px;
@@ -381,7 +424,9 @@ input {
 }
 
 
-/* ================= MAIN ================= */
+/* =========================================================
+   MAIN
+   ========================================================= */
 
 .trace-main {
   max-width: 1500px;
@@ -392,16 +437,33 @@ input {
 }
 
 
-/* Intro */
+/* =========================================================
+   INTRO
+   ========================================================= */
 
 .dashboard-intro {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
 
+  position: relative;
+
   gap: 25px;
 
-  margin-bottom: 28px;
+  margin-bottom: 38px;
+}
+
+.dashboard-intro::after {
+  content: "";
+
+  position: absolute;
+  left: 0;
+  bottom: -18px;
+
+  width: 54px;
+  height: 2px;
+
+  background: var(--tg-amber);
 }
 
 .dashboard-eyebrow {
@@ -445,6 +507,15 @@ input {
   background: var(--tg-surface);
 
   border-left: 2px solid var(--tg-amber);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.dashboard-revision:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(20, 20, 18, 0.06);
 }
 
 .dashboard-revision span {
@@ -467,7 +538,9 @@ input {
 }
 
 
-/* ================= KPI ================= */
+/* =========================================================
+   KPI
+   ========================================================= */
 
 .dashboard-kpis {
   display: grid;
@@ -492,14 +565,35 @@ input {
 
   border: 1px solid var(--tg-line);
 
-  transition: 0.2s ease;
+  isolation: isolate;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.dashboard-kpi:hover {
-  transform: translateY(-2px);
+.dashboard-kpi::before {
+  content: "";
 
-  box-shadow:
-    0 10px 25px rgba(20, 20, 18, 0.07);
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      110deg,
+      transparent 25%,
+      rgba(223, 152, 40, 0.08) 50%,
+      transparent 75%
+    );
+
+  transform: translateX(-120%);
+
+  transition: transform 0.6s ease;
+
+  pointer-events: none;
+
+  z-index: -1;
 }
 
 .dashboard-kpi::after {
@@ -516,6 +610,19 @@ input {
   border: 1px solid var(--tg-line);
 
   transform: rotate(45deg);
+}
+
+.dashboard-kpi:hover {
+  transform: translateY(-3px);
+
+  border-color: #b8b3a8;
+
+  box-shadow:
+    0 14px 30px rgba(20, 20, 18, 0.09);
+}
+
+.dashboard-kpi:hover::before {
+  transform: translateX(120%);
 }
 
 .dashboard-kpi-header {
@@ -556,6 +663,15 @@ input {
 
   font-size: 37px;
   letter-spacing: -2px;
+
+  transition:
+    transform 0.2s ease,
+    letter-spacing 0.2s ease;
+}
+
+.dashboard-kpi:hover .dashboard-kpi-value {
+  transform: translateX(2px);
+  letter-spacing: -1.5px;
 }
 
 .dashboard-kpi-detail {
@@ -569,7 +685,9 @@ input {
 }
 
 
-/* ================= PANEL ================= */
+/* =========================================================
+   PANELS
+   ========================================================= */
 
 .dashboard-panel {
   margin-bottom: 16px;
@@ -580,6 +698,17 @@ input {
 
   box-shadow:
     0 4px 12px rgba(20, 20, 18, 0.025);
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.dashboard-panel:hover {
+  border-color: #b8b3a8;
+
+  box-shadow:
+    0 8px 24px rgba(20, 20, 18, 0.045);
 }
 
 .dashboard-panel-header {
@@ -610,7 +739,9 @@ input {
 
   text-decoration: none;
 
-  transition: color 0.2s;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .dashboard-panel-code:hover {
@@ -618,7 +749,9 @@ input {
 }
 
 
-/* ================= TRACE ================= */
+/* =========================================================
+   TRACE
+   ========================================================= */
 
 .dashboard-trace-body {
   display: grid;
@@ -660,6 +793,19 @@ input {
   font-family: monospace;
   font-size: 7px;
   letter-spacing: 0.8px;
+
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.dashboard-trace-tags span:hover {
+  color: var(--tg-ink);
+
+  border-color: var(--tg-amber);
+
+  background: rgba(223, 152, 40, 0.07);
 }
 
 .dashboard-trace-form label {
@@ -677,6 +823,7 @@ input {
 
 .dashboard-trace-input {
   display: flex;
+  position: relative;
 }
 
 .dashboard-trace-input input {
@@ -696,12 +843,25 @@ input {
 
   font-family: monospace;
   font-size: 12px;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.dashboard-trace-input input:hover {
+  background: #efede6;
 }
 
 .dashboard-trace-input input:focus {
   background: #f5f2e9;
 
   border-color: var(--tg-amber);
+
+  box-shadow:
+    inset 3px 0 0 var(--tg-amber),
+    0 0 0 3px rgba(223, 152, 40, 0.08);
 }
 
 .dashboard-trace-input button {
@@ -718,12 +878,28 @@ input {
 
   cursor: pointer;
 
-  transition: 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.dashboard-trace-input button::after {
+  content: "→";
+
+  margin-left: 8px;
+
+  display: inline-block;
+
+  transition: transform 0.2s ease;
 }
 
 .dashboard-trace-input button:hover {
   background: var(--tg-amber);
   color: var(--tg-dark);
+}
+
+.dashboard-trace-input button:hover::after {
+  transform: translateX(4px);
 }
 
 .dashboard-trace-hint {
@@ -754,13 +930,19 @@ input {
 }
 
 
-/* ================= STATE ================= */
+/* =========================================================
+   STATE
+   ========================================================= */
 
 .dashboard-state-main {
   display: flex;
 
   align-items: center;
   justify-content: space-between;
+
+  position: relative;
+
+  overflow: hidden;
 
   padding: 25px 20px;
 
@@ -770,6 +952,20 @@ input {
       #ece9e1,
       #f5f3ed
     );
+}
+
+.dashboard-state-main::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 0;
+  bottom: 0;
+
+  width: 3px;
+
+  background: var(--tg-amber);
 }
 
 .dashboard-state-label {
@@ -820,6 +1016,8 @@ input {
   background: var(--tg-green);
 
   box-shadow: 0 0 10px rgba(113, 134, 77, 0.4);
+
+  animation: auditPulse 2.4s ease-in-out infinite;
 }
 
 .dashboard-state-grid {
@@ -834,6 +1032,12 @@ input {
   padding: 17px 20px;
 
   border-right: 1px solid var(--tg-line);
+
+  transition: background 0.2s ease;
+}
+
+.dashboard-state-item:hover {
+  background: rgba(223, 152, 40, 0.035);
 }
 
 .dashboard-state-item:last-child {
@@ -857,7 +1061,9 @@ input {
 }
 
 
-/* ================= LOWER GRID ================= */
+/* =========================================================
+   LOWER GRID
+   ========================================================= */
 
 .dashboard-lower-grid {
   display: grid;
@@ -872,7 +1078,9 @@ input {
 }
 
 
-/* ================= ACTIVITY ================= */
+/* =========================================================
+   ACTIVITY
+   ========================================================= */
 
 .dashboard-activity-list {
   padding: 4px 20px;
@@ -890,6 +1098,16 @@ input {
   gap: 8px;
 
   border-bottom: 1px solid #d9d5cb;
+
+  transition:
+    background 0.18s ease,
+    padding-left 0.18s ease;
+}
+
+.dashboard-activity:hover {
+  background: rgba(223, 152, 40, 0.045);
+
+  padding-left: 5px;
 }
 
 .dashboard-activity:last-child {
@@ -937,6 +1155,18 @@ input {
 
   box-shadow:
     0 0 0 1px var(--tg-amber);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.dashboard-activity:hover .dashboard-activity-marker span {
+  transform: scale(1.35);
+
+  box-shadow:
+    0 0 0 1px var(--tg-amber),
+    0 0 0 5px rgba(223, 152, 40, 0.08);
 }
 
 .dashboard-activity-info {
@@ -976,7 +1206,9 @@ input {
 }
 
 
-/* ================= ROUTE ================= */
+/* =========================================================
+   ROUTE
+   ========================================================= */
 
 .dashboard-route {
   padding: 35px 25px 20px;
@@ -996,6 +1228,14 @@ input {
   background: var(--tg-surface);
 
   border: 2px solid var(--tg-line-dark);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.dashboard-route-node:hover {
+  transform: scale(1.25);
 }
 
 .dashboard-route-node.complete {
@@ -1010,8 +1250,7 @@ input {
   background: var(--tg-amber);
   border-color: var(--tg-amber);
 
-  box-shadow:
-    0 0 0 5px rgba(223, 152, 40, 0.13);
+  animation: routePulse 2.6s ease-in-out infinite;
 }
 
 .dashboard-route-connector {
@@ -1080,7 +1319,9 @@ input {
 }
 
 
-/* ================= LEDGER ================= */
+/* =========================================================
+   LEDGER
+   ========================================================= */
 
 .dashboard-ledger-main {
   display: flex;
@@ -1120,6 +1361,8 @@ input {
 
   box-shadow:
     0 0 0 4px rgba(113, 134, 77, 0.1);
+
+  animation: auditPulse 2.4s ease-in-out infinite;
 }
 
 .dashboard-ledger-metrics {
@@ -1132,6 +1375,12 @@ input {
   padding: 18px 20px;
 
   border-right: 1px solid var(--tg-line);
+
+  transition: background 0.2s ease;
+}
+
+.dashboard-ledger-item:hover {
+  background: rgba(223, 152, 40, 0.035);
 }
 
 .dashboard-ledger-item:last-child {
@@ -1157,7 +1406,9 @@ input {
 }
 
 
-/* ================= FOOTER ================= */
+/* =========================================================
+   FOOTER
+   ========================================================= */
 
 .dashboard-footer {
   display: grid;
@@ -1166,6 +1417,9 @@ input {
 
   align-items: center;
 
+  position: relative;
+  overflow: hidden;
+
   gap: 25px;
 
   padding: 25px 38px;
@@ -1173,6 +1427,25 @@ input {
   background: var(--tg-dark);
 
   color: #e8e5dc;
+}
+
+.dashboard-footer::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--tg-amber),
+    transparent
+  );
 }
 
 .dashboard-footer strong {
@@ -1228,13 +1501,47 @@ input {
   border-radius: 50%;
 
   background: var(--tg-green);
+
+  animation: auditPulse 2.4s ease-in-out infinite;
 }
 
 
-/* ================= RESPONSIVE ================= */
+/* =========================================================
+   ANIMATIONS
+   ========================================================= */
+
+@keyframes auditPulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(113, 134, 77, 0.18);
+  }
+
+  50% {
+    opacity: 0.72;
+    box-shadow: 0 0 0 5px rgba(113, 134, 77, 0);
+  }
+}
+
+@keyframes routePulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 5px rgba(223, 152, 40, 0.13);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(223, 152, 40, 0.035);
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
 
 @media (max-width: 1100px) {
-
   .dashboard-kpis {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1247,12 +1554,10 @@ input {
     grid-template-columns: 1fr;
     gap: 25px;
   }
-
 }
 
 
 @media (max-width: 800px) {
-
   .trace-sidebar {
     width: 75px;
     padding: 22px 10px;
@@ -1285,12 +1590,10 @@ input {
   .trace-main {
     padding: 25px;
   }
-
 }
 
 
 @media (max-width: 600px) {
-
   .trace-sidebar {
     display: none;
   }
@@ -1365,5 +1668,18 @@ input {
   .dashboard-footer-right strong {
     justify-content: flex-start;
   }
+}
 
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
