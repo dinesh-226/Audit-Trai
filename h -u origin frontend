@@ -1,5 +1,0 @@
-[33m57d4e16[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfrontend[m[33m, [m[1;31morigin/frontend[m[33m, [m[1;31morigin/feature/frontend[m[33m)[m feat(frontend): add audit trail page structure and routing
-[33m603d15b[m[33m ([m[1;31morigin/feature/frontend-dashboard[m[33m, [m[1;32mfeature/frontend-dashboard[m[33m)[m feat: create audit trail dashboard prototype
-[33m01aefe0[m authentication added
-[33m2773ab8[m backend update for better use
-[33m0133210[m Create user schema
