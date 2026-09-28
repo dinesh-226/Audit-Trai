@@ -2,51 +2,88 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const { requireAuth, requireRole, JWT_SECRET } = require('../middleware/auth');
+
+const User = require('../models/user');
+const { protect, authorize } = require('../middleware/auth');
 const { createAuditLog } = require('../services/auditEngine');
 
-// Login
+const JWT_SECRET =
+  process.env.JWT_SECRET || 'fallback_secret_audit_trail_key_2026';
+
+// =========================
+// LOGIN
+// =========================
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      return res.status(400).json({
+        error: 'Email and password are required'
+      });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const user = await User.findOne({
+      email: email.toLowerCase().trim()
+    });
+
     if (!user) {
-      return res.status(400).json({ error: 'Invalid email or password' });
+      return res.status(401).json({
+        error: 'Invalid email or password'
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
-      return res.status(400).json({ error: 'Invalid email or password' });
+      return res.status(401).json({
+        error: 'Invalid email or password'
+      });
+    }
+
+    if (user.isActive === false) {
+      return res.status(403).json({
+        error: 'Your account has been deactivated'
+      });
     }
 
     user.lastLogin = new Date();
     await user.save();
 
     const token = jwt.sign(
-      { userId: user.userId, email: user.email, role: user.role },
+      {
+        id: user._id,
+        userId: user.userId,
+        email: user.email,
+        role: user.role
+      },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      {
+        expiresIn: '7d'
+      }
     );
 
-    // Create login audit log
-    await createAuditLog({
-      userId: user.userId,
-      username: user.name,
-      userRole: user.role,
-      action: 'USER_LOGIN',
-      entityType: 'User',
-      entityId: user.userId,
-      location: user.assignedPort || 'Maritime Command Center',
-      ipAddress: req.ip,
-      newValue: { lastLogin: user.lastLogin }
-    });
+    // Audit login - failure should NOT stop login
+    try {
+      await createAuditLog({
+        userId: user.userId,
+        username: user.name,
+        userRole: user.role,
+        action: 'USER_LOGIN',
+        entityType: 'User',
+        entityId: user.userId,
+        location: user.assignedPort || 'Maritime Command Center',
+        ipAddress: req.ip,
+        newValue: {
+          lastLogin: user.lastLogin
+        }
+      });
+    } catch (auditError) {
+      console.error('Login audit error:', auditError.message);
+    }
 
-    res.json({
+    return res.json({
+      success: true,
       token,
       user: {
         userId: user.userId,
@@ -59,62 +96,125 @@ router.post('/login', async (req, res) => {
         avatar: user.avatar
       }
     });
+
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error during authentication' });
+
+    return res.status(500).json({
+      error: 'Internal server error during authentication'
+    });
   }
 });
 
-// Register
+
+// =========================
+// REGISTER
+// =========================
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role = 'viewer', department, assignedPort } = req.body;
+    const {
+      name,
+      email,
+      password,
+      role = 'viewer',
+      department,
+      assignedPort
+    } = req.body;
+
     if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+      return res.status(400).json({
+        error: 'Name, email, and password are required'
+      });
     }
 
-    const existing = await User.findOne({ email: email.toLowerCase().trim() });
+    if (password.length < 6) {
+      return res.status(400).json({
+        error: 'Password must be at least 6 characters long'
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+
+    const existing = await User.findOne({
+      email: cleanEmail
+    });
+
     if (existing) {
-      return res.status(400).json({ error: 'An account with this email already exists' });
+      return res.status(409).json({
+        error: 'An account with this email already exists'
+      });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const count = await User.countDocuments();
+
     const userId = `USR-${String(count + 1).padStart(3, '0')}`;
+
+    const allowedRoles = [
+      'admin',
+      'port_manager',
+      'ship_manager',
+      'inspector',
+      'viewer'
+    ];
+
+    const finalRole = allowedRoles.includes(role)
+      ? role
+      : 'viewer';
 
     const user = new User({
       userId,
-      name,
-      email: email.toLowerCase().trim(),
+      name: name.trim(),
+      email: cleanEmail,
       password: hashedPassword,
-      role: ['admin', 'port_manager', 'ship_manager', 'inspector', 'viewer'].includes(role) ? role : 'viewer',
+      role: finalRole,
       department: department || 'Maritime Operations',
       assignedPort: assignedPort || 'Mumbai Port',
-      avatar: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80`
+      avatar:
+        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
     });
 
     await user.save();
 
     const token = jwt.sign(
-      { userId: user.userId, email: user.email, role: user.role },
+      {
+        id: user._id,
+        userId: user.userId,
+        email: user.email,
+        role: user.role
+      },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      {
+        expiresIn: '7d'
+      }
     );
 
-    await createAuditLog({
-      userId: user.userId,
-      username: user.name,
-      userRole: user.role,
-      action: 'USER_REGISTERED',
-      entityType: 'User',
-      entityId: user.userId,
-      location: user.assignedPort,
-      newValue: { email: user.email, role: user.role }
-    });
+    // Audit registration - failure should NOT stop registration
+    try {
+      await createAuditLog({
+        userId: user.userId,
+        username: user.name,
+        userRole: user.role,
+        action: 'USER_REGISTERED',
+        entityType: 'User',
+        entityId: user.userId,
+        location: user.assignedPort,
+        ipAddress: req.ip,
+        newValue: {
+          email: user.email,
+          role: user.role
+        }
+      });
+    } catch (auditError) {
+      console.error(
+        'Registration audit error:',
+        auditError.message
+      );
+    }
 
-    res.status(201).json({
+    return res.status(201).json({
+      success: true,
       token,
       user: {
         userId: user.userId,
@@ -123,66 +223,152 @@ router.post('/register', async (req, res) => {
         role: user.role,
         department: user.department,
         assignedPort: user.assignedPort,
+        assignedShipId: user.assignedShipId,
         avatar: user.avatar
       }
     });
+
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ error: 'Failed to register new user' });
+
+    return res.status(500).json({
+      error: 'Failed to register new user',
+      details: process.env.NODE_ENV !== 'production'
+        ? error.message
+        : undefined
+    });
   }
 });
 
-// Get Current User Profile
-router.get('/profile', requireAuth, async (req, res) => {
+
+// =========================
+// CURRENT USER PROFILE
+// =========================
+router.get('/profile', protect, async (req, res) => {
   try {
-    const user = await User.findOne({ userId: req.user.userId }).select('-password');
+    const user = await User.findOne({
+      userId: req.user.userId
+    }).select('-password');
+
     if (!user) {
-      return res.status(404).json({ error: 'User profile not found' });
+      return res.status(404).json({
+        error: 'User profile not found'
+      });
     }
-    res.json(user);
+
+    return res.json(user);
+
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve user profile' });
+    console.error('Profile error:', error);
+
+    return res.status(500).json({
+      error: 'Failed to retrieve user profile'
+    });
   }
 });
 
-// List all Demo Users for Quick-Switcher
+
+// =========================
+// DEMO USERS
+// =========================
 router.get('/demo-users', async (req, res) => {
   try {
-    const users = await User.find({ isActive: true }).select('userId name email role department assignedPort assignedShipId avatar');
-    res.json(users);
+    const users = await User.find({
+      isActive: true
+    }).select(
+      'userId name email role department assignedPort assignedShipId avatar'
+    );
+
+    return res.json(users);
+
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch demo users' });
-  }
-});
+    console.error('Demo users error:', error);
 
-// Update User Role (Admin only)
-router.patch('/users/:userId/role', requireAuth, requireRole('admin'), async (req, res) => {
-  try {
-    const { role } = req.body;
-    const targetUser = await User.findOne({ userId: req.params.userId });
-    if (!targetUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const prevRole = targetUser.role;
-    targetUser.role = role;
-    await targetUser.save();
-
-    await createAuditLog({
-      userId: req.user.userId,
-      username: req.user.name,
-      userRole: req.user.role,
-      action: 'USER_ROLE_MODIFIED',
-      entityType: 'User',
-      entityId: targetUser.userId,
-      previousValue: { role: prevRole },
-      newValue: { role }
+    return res.status(500).json({
+      error: 'Failed to fetch demo users'
     });
-
-    res.json({ message: 'User role updated successfully', user: targetUser });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update user role' });
   }
 });
+
+
+// =========================
+// UPDATE USER ROLE
+// ADMIN ONLY
+// =========================
+router.patch(
+  '/users/:userId/role',
+  protect,
+  authorize('admin'),
+  async (req, res) => {
+    try {
+      const { role } = req.body;
+
+      const allowedRoles = [
+        'admin',
+        'port_manager',
+        'ship_manager',
+        'inspector',
+        'viewer'
+      ];
+
+      if (!allowedRoles.includes(role)) {
+        return res.status(400).json({
+          error: 'Invalid role'
+        });
+      }
+
+      const targetUser = await User.findOne({
+        userId: req.params.userId
+      });
+
+      if (!targetUser) {
+        return res.status(404).json({
+          error: 'User not found'
+        });
+      }
+
+      const previousRole = targetUser.role;
+
+      targetUser.role = role;
+
+      await targetUser.save();
+
+      try {
+        await createAuditLog({
+          userId: req.user.userId,
+          username: req.user.name,
+          userRole: req.user.role,
+          action: 'USER_ROLE_MODIFIED',
+          entityType: 'User',
+          entityId: targetUser.userId,
+          previousValue: {
+            role: previousRole
+          },
+          newValue: {
+            role
+          }
+        });
+      } catch (auditError) {
+        console.error(
+          'Role audit error:',
+          auditError.message
+        );
+      }
+
+      return res.json({
+        message: 'User role updated successfully',
+        user: targetUser
+      });
+
+    } catch (error) {
+      console.error('Update role error:', error);
+
+      return res.status(500).json({
+        error: 'Failed to update user role'
+      });
+    }
+  }
+);
+
 
 module.exports = router;
