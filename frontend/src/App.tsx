@@ -1,10 +1,14 @@
-import React from "react";
 import { Routes, Route } from "react-router-dom";
 
 import DashboardPage from "./pages/DashboardPage";
 import ShipmentsPage from "./pages/ShipmentsPage";
 import EventsPage from "./pages/EventsPage";
+<<<<<<< HEAD
 import HistoricalState from "./components/HistoricalState";import "./App.css";
+=======
+import HistoricalStatePage from "./pages/HistoricalStatePage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+>>>>>>> origin/frontend
 
 function App() {
   return (
@@ -29,6 +33,7 @@ function App() {
         path="/events"
         element={<EventsPage />}
       />
+<<<<<<< HEAD
       <Route
   path="/history"
   element={
@@ -37,6 +42,11 @@ function App() {
     </div>
   }
 />
+=======
+       
+       <Route path="/history" element={<HistoricalStatePage />} />
+       <Route path="/analytics" element={<AnalyticsPage />} />
+>>>>>>> origin/frontend
 
     </Routes>
   );
