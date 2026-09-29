@@ -1,4 +1,4 @@
-import  { useState } from "react";
+import React, { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import "../styles/DashBoardPage.css";
 
@@ -50,20 +50,13 @@ function DashboardPage() {
   return (
     <div className="trace-app">
 
-      {/* =====================================================
-          SIDEBAR
-      ====================================================== */}
+      {/* ================= SIDEBAR ================= */}
 
       <aside className="trace-sidebar">
 
         <div>
-
-          {/* BRAND */}
-
           <div className="trace-brand">
-            <div className="brand-mark">
-              TG
-            </div>
+            <div className="brand-mark">TG</div>
 
             <div className="brand-text">
               <h1>TRACEGRID</h1>
@@ -72,8 +65,6 @@ function DashboardPage() {
           </div>
 
           <div className="sidebar-divider" />
-
-          {/* NAVIGATION */}
 
           <nav className="trace-nav">
 
@@ -130,10 +121,7 @@ function DashboardPage() {
               
 
           </nav>
-
         </div>
-
-        {/* SYSTEM STATUS */}
 
         <div className="system-card">
 
@@ -155,15 +143,11 @@ function DashboardPage() {
       </aside>
 
 
-      {/* =====================================================
-          MAIN APPLICATION
-      ====================================================== */}
+      {/* ================= MAIN CONTENT ================= */}
 
       <div className="trace-content">
 
-        {/* ===================================================
-            TOP BAR
-        ==================================================== */}
+        {/* TOPBAR */}
 
         <header className="trace-topbar">
 
@@ -190,7 +174,6 @@ function DashboardPage() {
 
             <div className="topbar-meta-item">
               <span>LEDGER</span>
-
               <strong className="ledger-active">
                 ● ACTIVE
               </strong>
@@ -201,16 +184,11 @@ function DashboardPage() {
         </header>
 
 
-        {/* ===================================================
-            MAIN CONTENT
-        ==================================================== */}
+        {/* MAIN */}
 
         <main className="trace-main">
 
-
-          {/* =================================================
-              01 — DASHBOARD INTRO
-          ================================================== */}
+          {/* ================= INTRO ================= */}
 
           <section className="dashboard-intro">
 
@@ -226,8 +204,7 @@ function DashboardPage() {
 
               <p>
                 Monitor shipment activity, trace recorded events,
-                and inspect the reconstructed state of logistics
-                operations.
+                and inspect the current state of logistics operations.
               </p>
 
             </div>
@@ -247,9 +224,7 @@ function DashboardPage() {
           </section>
 
 
-          {/* =================================================
-              02 — KPI STRIP
-          ================================================== */}
+          {/* ================= KPI ================= */}
 
           <section className="dashboard-kpis">
 
@@ -327,11 +302,9 @@ function DashboardPage() {
           </section>
 
 
-          {/* =================================================
-              03 — TRACE REQUEST
-          ================================================== */}
+          {/* ================= TRACE SEARCH ================= */}
 
-          <section className="dashboard-panel trace-request-panel">
+          <section className="dashboard-panel">
 
             <div className="dashboard-panel-header">
 
@@ -360,8 +333,8 @@ function DashboardPage() {
 
                 <p>
                   Search a shipment or container identifier
-                  to reconstruct its current state from the
-                  recorded operational event history.
+                  to inspect its current state and recorded
+                  operational history.
                 </p>
 
                 <div className="dashboard-trace-tags">
@@ -390,9 +363,7 @@ function DashboardPage() {
           </section>
 
 
-          {/* =================================================
-              04 — CURRENT SHIPMENT STATE
-          ================================================== */}
+          {/* ================= CURRENT STATE ================= */}
 
           <section className="dashboard-panel">
 
@@ -417,8 +388,6 @@ function DashboardPage() {
             </div>
 
 
-            {/* PRIMARY IDENTITY */}
-
             <div className="dashboard-state-main">
 
               <div>
@@ -441,7 +410,6 @@ function DashboardPage() {
                 </span>
 
                 <strong>
-                  <span className="state-live-dot" />
                   IN TRANSIT
                 </strong>
 
@@ -449,8 +417,6 @@ function DashboardPage() {
 
             </div>
 
-
-            {/* STATE METADATA */}
 
             <div className="dashboard-state-grid">
 
@@ -497,7 +463,6 @@ function DashboardPage() {
           </section>
 
 
-<<<<<<< HEAD
           {/* ================= HISTORICAL STATE ================= */}
 
           <HistoricalState
@@ -506,22 +471,11 @@ function DashboardPage() {
 
 
           {/* ================= LOWER GRID ================= */}
-=======
-          {/* =================================================
-              05 — EVENT + MOVEMENT GRID
-          ================================================== */}
->>>>>>> origin/frontend
 
           <section className="dashboard-lower-grid">
 
 
-<<<<<<< HEAD
             {/* RECENT ACTIVITY */}
-=======
-            {/* ===============================================
-                EVENT STREAM
-            ================================================ */}
->>>>>>> origin/frontend
 
             <section className="dashboard-panel">
 
@@ -551,12 +505,10 @@ function DashboardPage() {
 
               <div className="dashboard-activity-list">
 
-                {recentEvents.map((event, index) => (
+                {recentEvents.map((event) => (
 
                   <div
-                    className={`dashboard-activity ${
-                      index === 0 ? "latest-event" : ""
-                    }`}
+                    className="dashboard-activity"
                     key={event.number}
                   >
 
@@ -564,11 +516,9 @@ function DashboardPage() {
                       {event.number}
                     </span>
 
-
                     <div className="dashboard-activity-marker">
                       <span />
                     </div>
-
 
                     <div className="dashboard-activity-info">
 
@@ -581,7 +531,6 @@ function DashboardPage() {
                       </span>
 
                     </div>
-
 
                     <div className="dashboard-activity-time">
 
@@ -604,9 +553,7 @@ function DashboardPage() {
             </section>
 
 
-            {/* ===============================================
-                SHIPMENT MOVEMENT
-            ================================================ */}
+            {/* ROUTE */}
 
             <section className="dashboard-panel">
 
@@ -690,11 +637,9 @@ function DashboardPage() {
           </section>
 
 
-          {/* =================================================
-              06 — LEDGER INTEGRITY
-          ================================================== */}
+          {/* ================= LEDGER ================= */}
 
-          <section className="dashboard-panel dashboard-ledger-panel">
+          <section className="dashboard-panel">
 
             <div className="dashboard-ledger-main">
 
@@ -710,14 +655,11 @@ function DashboardPage() {
 
               </div>
 
-
               <div className="dashboard-ledger-valid">
 
                 <i className="dashboard-ledger-dot" />
 
-                <span>
-                  SEQUENCE VALID
-                </span>
+                SEQUENCE VALID
 
               </div>
 
@@ -727,85 +669,33 @@ function DashboardPage() {
             <div className="dashboard-ledger-metrics">
 
               <div className="dashboard-ledger-item">
-
-                <span>
-                  RECORDED EVENTS
-                </span>
-
-                <strong>
-                  184
-                </strong>
-
+                <span>RECORDED EVENTS</span>
+                <strong>184</strong>
               </div>
 
-
               <div className="dashboard-ledger-item">
-
-                <span>
-                  LATEST REVISION
-                </span>
-
-                <strong>
-                  07
-                </strong>
-
+                <span>LATEST REVISION</span>
+                <strong>07</strong>
               </div>
 
-
               <div className="dashboard-ledger-item">
-
-                <span>
-                  LEDGER MODE
-                </span>
-
-                <strong>
-                  APPEND ONLY
-                </strong>
-
+                <span>LEDGER MODE</span>
+                <strong>APPEND ONLY</strong>
               </div>
 
-
               <div className="dashboard-ledger-item">
-
-                <span>
-                  STATUS
-                </span>
-
-                <strong>
-                  OPERATIONAL
-                </strong>
-
+                <span>STATUS</span>
+                <strong>OPERATIONAL</strong>
               </div>
 
             </div>
 
           </section>
 
-
-          {/* =================================================
-              DASHBOARD FOOTER NOTE
-          ================================================== */}
-
-          <div className="dashboard-command-note">
-
-            <span className="command-note-marker">
-              //
-            </span>
-
-            <span>
-              EVENT HISTORY IS PRESERVED — CURRENT STATE IS
-              RECONSTRUCTED FROM THE LEDGER
-            </span>
-
-          </div>
-
-
         </main>
 
 
-        {/* ===================================================
-            FOOTER
-        ==================================================== */}
+        {/* ================= FOOTER ================= */}
 
         <footer className="dashboard-footer">
 
@@ -842,11 +732,8 @@ function DashboardPage() {
             </span>
 
             <strong>
-
               <i className="dashboard-footer-dot" />
-
               OPERATIONAL
-
             </strong>
 
           </div>
