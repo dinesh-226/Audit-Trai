@@ -8,14 +8,13 @@ import {
   Ship,
   MapPin,
   Box,
-  QrCode,
   FileText,
   AlertTriangle,
   ArrowRight,
   Sparkles
 } from 'lucide-react';
 
-export const ContainerTimelinePage = ({ initialContainerId, onBack, onOpenQr }) => {
+export const ContainerTimelinePage = ({ initialContainerId, onBack }) => {
   const [containers, setContainers] = useState([]);
   const [selectedId, setSelectedId] = useState(initialContainerId || '');
   const [container, setContainer] = useState(null);
@@ -89,7 +88,7 @@ export const ContainerTimelinePage = ({ initialContainerId, onBack, onOpenQr }) 
           </div>
         </div>
 
-        {/* Container Selector & QR Button */}
+        {/* Container Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <select
             className="select-control"
@@ -103,13 +102,6 @@ export const ContainerTimelinePage = ({ initialContainerId, onBack, onOpenQr }) 
               </option>
             ))}
           </select>
-
-          {container && (
-            <button onClick={() => onOpenQr(container)} className="btn btn-primary">
-              <QrCode size={16} />
-              <span>QR Pass</span>
-            </button>
-          )}
         </div>
       </div>
 

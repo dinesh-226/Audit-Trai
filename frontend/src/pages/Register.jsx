@@ -34,13 +34,14 @@ export const Register = ({ onBackToHome, onGoToLogin, onSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [registeredPendingUser, setRegisteredPendingUser] = useState(null);
 
   const roleDescriptions = {
-    admin: '👑 Admin: Highest level of access. Manages users, changes roles, views complete audit trail, runs tamper simulations, verifies system integrity, and generates reports.',
-    port_manager: '⚓ Port Manager: Focuses on port activities. Monitors containers, loading/unloading operations, yard logistics, gate entry/exit, and ship berths.',
-    ship_manager: '🚢 Ship Manager: Focuses on vessels and voyages. Monitors ship location, AIS speed, routes, onboard container manifests, voyage details, and estimated arrival (ETA).',
-    inspector: '🔍 Inspector: Checks physical condition & security of containers. Verifies seals, conducts inspections, uploads photos, completes checklists, and marks Pass/Fail.',
-    viewer: '👁️ Viewer: Read-only access. Can view records, verify audit trail integrity, inspect container details, and generate reports, but cannot modify data.'
+    admin: '👑 Admin: Highest level of access. Manages users, changes roles, views complete audit trail, verifies system integrity, monitors security, and generates reports.',
+    port_manager: '⚓ Port Manager: Focuses on port activities. Monitors containers, loading/unloading operations, yard logistics, gate entry/exit, and ship berths. (Requires Admin Approval)',
+    ship_manager: '🚢 Ship Manager: Focuses on vessels and voyages. Monitors ship location, AIS speed, routes, onboard container manifests, voyage details, and estimated arrival (ETA). (Requires Admin Approval)',
+    inspector: '🔍 Inspector: Checks physical condition & security of containers. Verifies seals, conducts inspections, uploads photos, completes checklists, and marks Pass/Fail. (Requires Admin Approval)',
+    viewer: '👁️ Viewer: Read-only access. Instant access without approval! Can view records, verify audit trail integrity, inspect container details, and generate reports.'
   };
 
   const handleSubmit = async (e) => {
@@ -73,7 +74,12 @@ export const Register = ({ onBackToHome, onGoToLogin, onSuccess }) => {
         department,
         assignedPort
       });
-      if (onSuccess) onSuccess(res?.user);
+
+      if (res?.requiresApproval || res?.user?.approvalStatus === 'pending') {
+        setRegisteredPendingUser(res.user || { name, email, role, department, assignedPort });
+      } else {
+        if (onSuccess) onSuccess(res?.user);
+      }
     } catch (err) {
       setError(err.message || 'Registration failed. Please check your information.');
     } finally {
@@ -247,7 +253,7 @@ export const Register = ({ onBackToHome, onGoToLogin, onSuccess }) => {
           </div>
         </div>
 
-        {/* Right Side: Registration Form */}
+        {/* Right Side: Registration Form or Pending Approval Screen */}
         <div style={{
           flex: 1.2,
           background: '#ffffff',
@@ -259,40 +265,147 @@ export const Register = ({ onBackToHome, onGoToLogin, onSuccess }) => {
           flexDirection: 'column',
           justifyContent: 'center'
         }}>
-          {/* Header */}
-          <div style={{ marginBottom: '22px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0', letterSpacing: '-0.4px' }}>
-              Create Officer Account
-            </h1>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-              Enter your officer details and select your assigned operational authority.
-            </p>
-          </div>
+          {registeredPendingUser ? (
+            <div>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                background: '#fef3c7',
+                border: '2px solid #fde68a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '16px'
+              }}>
+                <ShieldCheck size={28} color="#d97706" />
+              </div>
 
-          {/* Error Banner */}
-          {error && (
-            <div style={{
-              background: '#fee2e2',
-              color: '#b91c1c',
-              border: '1px solid #fecaca',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              marginBottom: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <span>{error}</span>
-              <button
-                type="button"
-                onClick={() => setError(null)}
-                style={{ background: 'none', border: 'none', color: '#b91c1c', cursor: 'pointer', fontWeight: 700 }}
-              >
-                ✕
-              </button>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+                color: '#92400e',
+                fontSize: '11px',
+                fontWeight: 800,
+                padding: '4px 10px',
+                borderRadius: '999px',
+                marginBottom: '12px'
+              }}>
+                <span>PENDING ADMIN APPROVAL</span>
+              </div>
+
+              <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', margin: '0 0 8px 0', letterSpacing: '-0.4px' }}>
+                Officer Application Submitted!
+              </h2>
+
+              <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, marginBottom: '20px' }}>
+                Thank you, <strong>{registeredPendingUser.name}</strong>. Your registration for privileged role{' '}
+                <strong style={{ color: '#0369a1' }}>{registeredPendingUser.role?.replace('_', ' ').toUpperCase()}</strong> has been recorded on the SHA-256 ledger.
+              </p>
+
+              <div style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: '#64748b' }}>Officer Email:</span>
+                  <span style={{ fontWeight: 700, color: '#0f172a' }}>{registeredPendingUser.email}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: '#64748b' }}>Station / Port:</span>
+                  <span style={{ fontWeight: 700, color: '#0f172a' }}>{registeredPendingUser.assignedPort}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: '#64748b' }}>Department:</span>
+                  <span style={{ fontWeight: 700, color: '#0f172a' }}>{registeredPendingUser.department}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: '#64748b' }}>Security Status:</span>
+                  <span style={{ fontWeight: 700, color: '#d97706' }}>Awaiting Admin Authorization</span>
+                </div>
+              </div>
+
+              <div style={{
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: '10px',
+                padding: '12px',
+                fontSize: '12px',
+                color: '#1e40af',
+                marginBottom: '24px',
+                lineHeight: 1.5
+              }}>
+                <strong>Maritime RBAC Policy:</strong> To protect port assets and vessel logs, privileged officer accounts (Ship Manager, Port Manager, Inspector) require one-time approval by the System Administrator (Capt. Rajesh Menon). Viewers can access instantly without approval.
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={onGoToLogin}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '12px', fontWeight: 700 }}
+                >
+                  <ArrowRight size={16} />
+                  <span>Return to Sign In</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegisteredPendingUser(null);
+                    setRole('viewer');
+                  }}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '12px', fontWeight: 700 }}
+                >
+                  <span>Register as Viewer</span>
+                </button>
+              </div>
             </div>
-          )}
+          ) : (
+            <>
+              {/* Header */}
+              <div style={{ marginBottom: '22px' }}>
+                <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0', letterSpacing: '-0.4px' }}>
+                  Create Officer Account
+                </h1>
+                <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
+                  Enter your officer details and select your assigned operational authority.
+                </p>
+              </div>
+
+              {/* Error Banner */}
+              {error && (
+                <div style={{
+                  background: '#fee2e2',
+                  color: '#b91c1c',
+                  border: '1px solid #fecaca',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <span>{error}</span>
+                  <button
+                    type="button"
+                    onClick={() => setError(null)}
+                    style={{ background: 'none', border: 'none', color: '#b91c1c', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -517,9 +630,11 @@ export const Register = ({ onBackToHome, onGoToLogin, onSuccess }) => {
               Sign In to Terminal
             </button>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
+  </div>
+</div>
   );
 };
 

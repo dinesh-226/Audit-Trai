@@ -9,7 +9,6 @@ import {
   Sparkles,
   CheckCircle2,
   AlertTriangle,
-  QrCode,
   Lock,
   ArrowRight,
   TrendingUp,
@@ -29,8 +28,8 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
       icon: ShieldCheck,
       color: '#059669',
       bg: 'rgba(16, 185, 129, 0.1)',
-      title: 'Cryptographic SHA-256 Audit Trail',
-      description: 'Every container booking, loading, and vessel departure is forward-chained into an immutable blockchain ledger. Detect any database tampering instantly with one click.'
+      title: 'Verified Maritime Audit Trail',
+      description: 'Every container booking, loading, and vessel departure is permanently logged into an immutable audit trail. Detect any unauthorized changes or discrepancies instantly with one click.'
     },
     {
       icon: MapPin,
@@ -51,14 +50,14 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
       color: '#7c3aed',
       bg: 'rgba(124, 58, 237, 0.1)',
       title: 'Visual Journey Milestones',
-      description: 'End-to-end milestone timeline from Booked ➔ Loaded ➔ In Transit ➔ Arrived ➔ Unloaded ➔ Inspected ➔ Delivered with digital officer signatures and block hashes.'
+      description: 'End-to-end milestone timeline from Booked ➔ Loaded ➔ In Transit ➔ Arrived ➔ Unloaded ➔ Inspected ➔ Delivered with digital officer signatures and activity logs.'
     },
     {
-      icon: QrCode,
+      icon: Box,
       color: '#0f3460',
       bg: 'rgba(15, 52, 96, 0.1)',
-      title: 'Container QR Shipping Passes',
-      description: 'Generate dynamic QR codes for physical containers. Port customs and clients can scan the code to instantly verify seal numbers, journey milestones, and ledger certificates.'
+      title: 'Real-Time Container Inventory',
+      description: 'Comprehensive tracking of container status, cargo manifests, physical seal integrity, hazardous classifications, and cold-chain temperatures.'
     },
     {
       icon: Sparkles,
@@ -74,7 +73,7 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
       title: 'Admin',
       badge: 'badge-purple',
       icon: '👑',
-      desc: 'Highest level of access. Manages users, changes roles, views complete audit trail, runs tamper simulations, verifies system integrity, and generates reports.'
+      desc: 'Highest level of access. Manages users, changes roles, views complete audit trail, verifies system integrity, monitors security, and generates reports.'
     },
     {
       title: 'Port Manager',
@@ -151,7 +150,7 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
             Live AIS Tracking
           </a>
           <a href="#how-it-works" style={{ fontSize: '14px', fontWeight: 600, color: '#475569', textDecoration: 'none', transition: 'color 0.2s' }}>
-            Blockchain Security
+            Audit Security
           </a>
           <a href="#roles" style={{ fontSize: '14px', fontWeight: 600, color: '#475569', textDecoration: 'none', transition: 'color 0.2s' }}>
             User Roles
@@ -201,7 +200,7 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
           marginBottom: '24px'
         }}>
           <ShieldCheck size={16} color="#059669" />
-          <span>IMO-ISPS & ISO 6346 COMPLIANT MARITIME AUDIT LEDGER</span>
+          <span>SECURE MARITIME & CARGO TRACKING PLATFORM</span>
         </div>
 
         {/* Main Headline */}
@@ -214,13 +213,13 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
           maxWidth: '960px',
           margin: '0 auto 20px auto'
         }}>
-          AI-Powered Container Ship <br />
+          Smart Port & Container Ship <br />
           <span style={{
             background: 'linear-gradient(135deg, #0f3460 0%, #0284c7 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
-            Audit Trail & Monitoring System
+            Tracking & Monitoring System
           </span>
         </h1>
 
@@ -232,8 +231,8 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
           margin: '0 auto 36px auto',
           lineHeight: 1.6
         }}>
-          Maintain a complete, transparent, and tamper-resistant record of container and ship operations.
-          Track container journeys from booking to delivery, verify blockchain hashes with SHA-256, and detect anomalies with AI.
+          Keep a clear and protected record of shipments.
+          Track containers from booking to delivery, view live ship maps, and detect issues automatically.
         </p>
 
         {/* Hero CTAs */}
@@ -242,14 +241,14 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
             onClick={onOpenRegister}
             className="btn btn-primary btn-lg"
           >
-            <span>Register Officer Account</span>
+            <span>Create Account</span>
             <ArrowRight size={18} />
           </button>
           <button
             onClick={onOpenLogin}
             className="btn btn-secondary btn-lg"
           >
-            <span>Sign In / Demo Login</span>
+            <span>Sign In</span>
           </button>
         </div>
 
@@ -267,31 +266,31 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
           <div>
             <div style={{ fontSize: '32px', fontWeight: 800, color: '#0f3460' }}>100%</div>
             <div style={{ fontSize: '12px', fontWeight: 700, color: '#059669', textTransform: 'uppercase', marginTop: '2px' }}>
-              SHA-256 Chained Integrity
+              Protected Records
             </div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Zero silent record alterations</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Safe from unauthorized edits</div>
           </div>
 
           <div>
-            <div style={{ fontSize: '32px', fontWeight: 800, color: '#0f3460' }}>7 AI Rules</div>
+            <div style={{ fontSize: '32px', fontWeight: 800, color: '#0f3460' }}>7 Safety Rules</div>
             <div style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', textTransform: 'uppercase', marginTop: '2px' }}>
-              Anomaly Detection
+              Issue Alerts
             </div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Real-time sequence triggers</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Instant warning of problems</div>
           </div>
 
           <div>
-            <div style={{ fontSize: '32px', fontWeight: 800, color: '#0f3460' }}>5 Global Hubs</div>
+            <div style={{ fontSize: '32px', fontWeight: 800, color: '#0f3460' }}>5 Major Ports</div>
             <div style={{ fontSize: '12px', fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', marginTop: '2px' }}>
-              Live AIS Corridors
+              Live Tracking
             </div>
             <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Mumbai, Singapore, Rotterdam, Suez</div>
           </div>
 
           <div>
-            <div style={{ fontSize: '32px', fontWeight: 800, color: '#0f3460' }}>5 Role Tiers</div>
+            <div style={{ fontSize: '32px', fontWeight: 800, color: '#0f3460' }}>5 User Roles</div>
             <div style={{ fontSize: '12px', fontWeight: 700, color: '#d97706', textTransform: 'uppercase', marginTop: '2px' }}>
-              Role-Based Control
+              Dedicated Views
             </div>
             <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Admin, Port, Ship, Inspector, Viewer</div>
           </div>
@@ -308,13 +307,13 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
         <div style={{ maxWidth: '1360px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '56px' }}>
             <div style={{ fontSize: '11px', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-              PLATFORM MODULES
+              KEY FEATURES
             </div>
             <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0' }}>
-              Comprehensive Maritime Audit & Monitoring
+              Everything You Need in One Platform
             </h2>
             <p style={{ fontSize: '16px', color: '#64748b', maxWidth: '640px', margin: '0 auto' }}>
-              Everything required to track container movements, protect audit integrity, and automate safety compliance.
+              Easily track containers, monitor ships at sea, inspect cargo, and verify all records.
             </p>
           </div>
 
@@ -375,13 +374,13 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
       <section id="how-it-works" style={{ padding: '90px 48px', maxWidth: '1360px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
           <div style={{ fontSize: '11px', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-            IMMUTABILITY GUARANTEES
+            RECORD SAFETY
           </div>
           <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0' }}>
-            How Cryptographic Ledger Hashing Works
+            How Record Protection Works
           </h2>
           <p style={{ fontSize: '16px', color: '#64748b', maxWidth: '700px', margin: '0 auto' }}>
-            Every event links directly to the cryptographic fingerprint of the preceding record, making historical manipulation mathematically impossible to hide.
+            Every event links directly to the previous one, making it impossible to delete or change history without detection.
           </p>
         </div>
 
@@ -391,10 +390,10 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
               1
             </div>
             <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px 0', color: '#0f172a' }}>
-              Operation Executed
+              Action Logged
             </h4>
             <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-              An authenticated officer registers a container booking, ship arrival, loading event, or inspection pass.
+              A user books a container, updates a ship arrival, or completes an inspection.
             </p>
           </div>
 
@@ -403,22 +402,22 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
               2
             </div>
             <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px 0', color: '#0f172a' }}>
-              SHA-256 Hashed
+              Protected Record
             </h4>
             <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-              The payload, timestamps, officer role, and previous block hash are cryptographically combined into a SHA-256 digest.
+              Details, timestamps, and user name are saved into a secure, protected record.
             </p>
           </div>
 
           <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '28px', position: 'relative' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#7c3aed', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, marginBottom: '16px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '7c3aed', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, marginBottom: '16px', background: '#0f3460' }}>
               3
             </div>
             <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px 0', color: '#0f172a' }}>
-              Forward-Chained
+              Connected History
             </h4>
             <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-              The new hash becomes the required prerequisite for all future audit logs, forming a continuous tamper-proof chain.
+              Each new log links to the previous entry to form a complete, permanent timeline.
             </p>
           </div>
 
@@ -427,10 +426,10 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
               4
             </div>
             <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px 0', color: '#0f172a' }}>
-              Instant Verification
+              Instant Check
             </h4>
             <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-              Auditors can click "Verify Audit Integrity" at any time to mathematically confirm 100% block continuity.
+              Admins can click "Check Record Safety" at any time to confirm all logs are intact.
             </p>
           </div>
         </div>
@@ -441,13 +440,13 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
         <div style={{ maxWidth: '1360px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '50px' }}>
             <div style={{ fontSize: '11px', fontWeight: 800, color: '#0f3460', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-              SECURITY & ACCESS CONTROL
+              USER ROLES
             </div>
             <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0' }}>
-              Role-Based Access Control
+              Separate Dashboards for Every Role
             </h2>
             <p style={{ fontSize: '16px', color: '#64748b', maxWidth: '640px', margin: '0 auto' }}>
-              Tailored workspaces and permissions for every stakeholder in the maritime logistics supply chain.
+              Dedicated views and tools designed specifically for each team member's responsibilities.
             </p>
           </div>
 
@@ -533,26 +532,154 @@ export const LandingPage = ({ onLaunchApp, onOpenLogin, onOpenRegister }) => {
         </div>
       </section>
 
-      {/* 7. Footer */}
+      {/* 7. Comprehensive Modern Enterprise Footer */}
       <footer style={{
-        padding: '40px 48px',
-        background: '#ffffff',
-        borderTop: '1px solid #e2e8f0',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '16px',
-        fontSize: '13px',
-        color: '#64748b'
+        background: '#0a192f',
+        color: '#94a3b8',
+        borderTop: '1px solid #1e293b',
+        paddingTop: '64px',
+        paddingBottom: '32px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Anchor size={18} color="#0f3460" />
-          <span style={{ fontWeight: 700, color: '#0f172a' }}>ContainerShip Audit Trail System</span>
-          <span>&copy; 2026. Cryptographically Verified Maritime Ledger.</span>
-        </div>
-        <div>
-          <span>Frameworks: <strong>IMO-ISPS</strong> &bull; <strong>ISO 6346</strong> &bull; <strong>SHA-256 Ledger</strong></span>
+        <div style={{ maxWidth: '1360px', margin: '0 auto', padding: '0 48px' }}>
+          {/* Main 5-Column Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '40px',
+            marginBottom: '48px'
+          }}>
+            {/* Column 1: Brand & Overview */}
+            <div style={{ minWidth: '260px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
+                }}>
+                  <Anchor size={22} color="#ffffff" />
+                </div>
+                <div>
+                  <div style={{ fontSize: '17px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
+                    CONTAINERSHIP
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#38bdf8', fontWeight: 800, letterSpacing: '1px' }}>
+                    AUDIT TRAIL & AIS
+                  </div>
+                </div>
+              </div>
+
+              <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6, marginBottom: '20px' }}>
+                End-to-end cryptographic maritime logistics intelligence, live AIS satellite vessel tracking, ISO 6346 container telemetry, and tamper-evident SHA-256 audit trail chain-of-custody.
+              </p>
+
+              <div style={{
+                background: 'rgba(15, 23, 42, 0.6)',
+                border: '1px solid rgba(56, 189, 248, 0.2)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span className="pulse-dot" style={{ width: '8px', height: '8px', background: '#10b981' }} />
+                <span style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: 700 }}>
+                  Global AIS & Ledger: 100% Online
+                </span>
+              </div>
+            </div>
+
+            {/* Column 2: Platform Modules */}
+            <div>
+              <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '18px' }}>
+                Platform Modules
+              </h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                <li><a href="#features" style={{ color: '#94a3b8', textDecoration: 'none', transition: 'color 0.2s' }}>Maritime Audit Trail Explorer</a></li>
+                <li><a href="#ais-tracking" style={{ color: '#94a3b8', textDecoration: 'none', transition: 'color 0.2s' }}>Live AIS Satellite Telemetry</a></li>
+                <li><a href="#features" style={{ color: '#94a3b8', textDecoration: 'none', transition: 'color 0.2s' }}>AI Anomaly Detection Engine</a></li>
+                <li><a href="#features" style={{ color: '#94a3b8', textDecoration: 'none', transition: 'color 0.2s' }}>Container Inventory & Seals</a></li>
+                <li><a href="#features" style={{ color: '#94a3b8', textDecoration: 'none', transition: 'color 0.2s' }}>Cold Chain & Risk Analytics</a></li>
+                <li><a href="#features" style={{ color: '#94a3b8', textDecoration: 'none', transition: 'color 0.2s' }}>Formal IMO Compliance Reports</a></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Role-Based Access Control */}
+            <div>
+              <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '18px' }}>
+                User Role Workspaces
+              </h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                <li><span style={{ color: '#c084fc', fontWeight: 600 }}>👑 Admin Command</span> — System governance</li>
+                <li><span style={{ color: '#38bdf8', fontWeight: 600 }}>⚓ Port Manager</span> — Terminal & quay ops</li>
+                <li><span style={{ color: '#60a5fa', fontWeight: 600 }}>🚢 Ship Manager</span> — Fleet voyage telemetry</li>
+                <li><span style={{ color: '#fbbf24', fontWeight: 600 }}>🔍 Customs Inspector</span> — Seals & checklists</li>
+                <li><span style={{ color: '#4ade80', fontWeight: 600 }}>👁️ Viewer & Auditor</span> — Read-only ledger</li>
+                <li><span style={{ color: '#e2e8f0', fontSize: '11px', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '4px' }}>🛡️ Admin Approval Required for Officers</span></li>
+              </ul>
+            </div>
+
+            {/* Column 4: Compliance & Standards */}
+            <div>
+              <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '18px' }}>
+                Maritime Standards
+              </h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                <li><span style={{ color: '#e2e8f0' }}>IMO-ISPS</span> — International Ship & Port Facility Security</li>
+                <li><span style={{ color: '#e2e8f0' }}>ISO 6346</span> — Freight Container Coding Standard</li>
+                <li><span style={{ color: '#e2e8f0' }}>ISO 17712</span> — High-Security Mechanical Bolt Seals</li>
+                <li><span style={{ color: '#e2e8f0' }}>NIST FIPS 180-4</span> — Secure SHA-256 Forward Hashing</li>
+                <li><span style={{ color: '#e2e8f0' }}>UN/CEFACT</span> — Digital Maritime Logistics Data</li>
+              </ul>
+            </div>
+
+            {/* Column 5: Global Port Network */}
+            <div>
+              <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '18px' }}>
+                Active Port Network
+              </h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                <li>📍 <strong>Mumbai Port (JNPT)</strong> — Terminal 1-4</li>
+                <li>📍 <strong>Port of Singapore</strong> — Pasir Panjang</li>
+                <li>📍 <strong>Port of Rotterdam</strong> — Maasvlakte II</li>
+                <li>📍 <strong>Jebel Ali Port (Dubai)</strong> — Quay Berth 8</li>
+                <li>📍 <strong>Shanghai Yangshan Port</strong> — Deepwater Hub</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Divider & Sub-footer */}
+          <div style={{
+            borderTop: '1px solid #1e293b',
+            paddingTop: '28px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '16px',
+            fontSize: '12px',
+            color: '#64748b'
+          }}>
+            <div>
+              &copy; 2026 <strong>ContainerShip Audit Trail & AIS Intelligence System</strong>. All rights reserved.
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <span style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                256-BIT ENCRYPTION
+              </span>
+              <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                FORWARD-CHAINED SHA-256
+              </span>
+              <span style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.2)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                LIVE SATELLITE AIS
+              </span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

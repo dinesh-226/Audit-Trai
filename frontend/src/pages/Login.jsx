@@ -14,8 +14,11 @@ import {
   Radio,
   Sparkles,
   HelpCircle,
-  KeyRound
+  KeyRound,
+  AlertTriangle,
+  Clock
 } from 'lucide-react';
+import { ForgotPasswordModal } from '../components/ForgotPasswordModal';
 
 export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
   const { login } = useAuth();
@@ -24,18 +27,26 @@ export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState(null);
+  const [pendingApprovalMsg, setPendingApprovalMsg] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [successBanner, setSuccessBanner] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setPendingApprovalMsg(null);
     setLoading(true);
 
     try {
       const res = await login(email, password);
       if (onSuccess) onSuccess(res?.user);
     } catch (err) {
-      setError(err.message || 'Authentication failed. Please verify your email and password.');
+      if (err.message && err.message.includes('pending approval')) {
+        setPendingApprovalMsg(err.message);
+      } else {
+        setError(err.message || 'Authentication failed. Please verify your email and password.');
+      }
     } finally {
       setLoading(false);
     }
@@ -147,7 +158,7 @@ export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
               marginBottom: '28px'
             }}>
               <ShieldCheck size={14} color="#86efac" />
-              <span>CRYPTOGRAPHIC MARITIME LOGISTICS</span>
+              <span>PORT & SHIP TRACKING</span>
             </div>
 
             <h2 style={{
@@ -157,11 +168,11 @@ export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
               marginBottom: '16px',
               letterSpacing: '-0.5px'
             }}>
-              Immutable Container & Fleet Audit Command
+              Container & Ship Tracking Platform
             </h2>
 
             <p style={{ fontSize: '15px', color: '#e2e8f0', lineHeight: 1.6, marginBottom: '36px' }}>
-              Access live AIS vessel coordinates, inspect forward-chained SHA-256 audit trails, and review AI anomaly flags across 5 international trading hubs.
+              Track container shipments, monitor ships at sea, and inspect activity records across major ports.
             </p>
 
             {/* 3 Value Pillars */}
@@ -180,8 +191,8 @@ export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
                   <Lock size={18} color="#38bdf8" />
                 </div>
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700 }}>Tamper-Resistant Block Chains</div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Every booking, seal verification, and departure is cryptographically hashed.</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700 }}>Protected Activity History</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Every booking, seal check, and departure is permanently logged.</div>
                 </div>
               </div>
 
@@ -199,8 +210,8 @@ export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
                   <Radio size={18} color="#86efac" />
                 </div>
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700 }}>Live AIS Satellite Telemetry</div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Real-time speeds, headings, and waypoint tracking across global trade lanes.</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700 }}>Live Ship Location Map</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Real-time speeds, headings, and route tracking across shipping lanes.</div>
                 </div>
               </div>
 
@@ -218,8 +229,8 @@ export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
                   <Sparkles size={18} color="#fde047" />
                 </div>
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700 }}>AI Audit Assistant & Anomaly Detection</div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Instant heuristic triggers for out-of-order movements and cold chain excursions.</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700 }}>AI Assistant & Issue Alerts</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>Instant alerts for unexpected container movements or temperature changes.</div>
                 </div>
               </div>
             </div>
@@ -234,8 +245,8 @@ export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
             justifyContent: 'space-between',
             alignItems: 'center'
           }}>
-            <span>IMO-ISPS & ISO 6346 COMPLIANT</span>
-            <span>256-BIT ENCRYPTION</span>
+            <span>PORT OPERATIONS & AUDIT</span>
+            <span>SECURE ACCESS</span>
           </div>
         </div>
 
@@ -273,6 +284,59 @@ export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
               Enter your official credentials to access fleet telemetry, containers, and audit records.
             </p>
           </div>
+
+          {/* Success Banner */}
+          {successBanner && (
+            <div style={{
+              background: '#ecfdf5',
+              color: '#065f46',
+              border: '1px solid #a7f3d0',
+              padding: '12px 14px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <Check size={16} color="#059669" />
+              <span>{successBanner}</span>
+            </div>
+          )}
+
+          {/* Pending Approval Notice Banner */}
+          {pendingApprovalMsg && (
+            <div style={{
+              background: '#fffbeb',
+              color: '#92400e',
+              border: '1px solid #fde68a',
+              padding: '14px 16px',
+              borderRadius: '10px',
+              fontSize: '12px',
+              marginBottom: '18px',
+              lineHeight: 1.5
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, marginBottom: '4px', color: '#b45309' }}>
+                <Clock size={16} />
+                <span>Officer Registration Awaiting Admin Approval</span>
+              </div>
+              <div>{pendingApprovalMsg}</div>
+              <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('viewer@auditflow.com');
+                    setPassword('audit123');
+                    setPendingApprovalMsg(null);
+                  }}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '11px', padding: '4px 10px' }}
+                >
+                  👁️ Log in as Viewer (Instant Access)
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Error Banner */}
           {error && (
@@ -324,9 +388,22 @@ export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
                 <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', margin: 0 }}>
                   Password *
                 </label>
-                <span style={{ fontSize: '11px', color: '#0284c7', cursor: 'pointer', fontWeight: 600 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    fontSize: '12px',
+                    color: '#0284c7',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    textDecoration: 'underline'
+                  }}
+                >
                   Forgot password?
-                </span>
+                </button>
               </div>
               <div style={{ position: 'relative' }}>
                 <input
@@ -415,6 +492,17 @@ export const Login = ({ onBackToHome, onGoToRegister, onSuccess }) => {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+        initialEmail={email}
+        onSuccessEmail={(confirmedEmail) => {
+          setEmail(confirmedEmail);
+          setSuccessBanner('Password updated successfully! You can now log in with your new password.');
+        }}
+      />
     </div>
   );
 };

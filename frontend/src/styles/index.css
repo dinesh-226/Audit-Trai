@@ -1,61 +1,71 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
-  /* Crisp Light Theme Palette */
+  /* =========================================================
+     TWO-COLOR THEME:
+     1. Maritime Deep Navy (#0f3460)
+     2. Ocean Blue (#0284c7)
+     ========================================================= */
+
+  /* Primary: Deep Maritime Navy */
+  --primary: #0f3460;
+  --primary-hover: #0a2342;
+  --primary-light: #f0f5fa;
+  --primary-border: #cbd9e8;
+
+  /* Secondary: Ocean Blue Accent */
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
+  --accent-light: #e0f2fe;
+  --accent-border: #bae6fd;
+  --cyan: #0284c7;
+
+  /* Neutral Backgrounds & Cards */
   --bg-primary: #f8fafc;
   --bg-secondary: #f1f5f9;
   --bg-card: #ffffff;
   --bg-card-hover: #f8fafc;
   --bg-elevated: #ffffff;
+  
+  /* Borders */
   --border-color: #e2e8f0;
   --border-light: #cbd5e1;
   --border-subtle: #f1f5f9;
-  
-  /* Primary Maritime Navy & Ocean Blue Accents */
-  --primary: #0f3460;
-  --primary-hover: #16213e;
-  --primary-light: rgba(15, 52, 96, 0.08);
-  
-  --accent-blue: #0284c7;
-  --accent-blue-hover: #0369a1;
-  --cyan: #0284c7;
-  --cyan-light: rgba(2, 132, 199, 0.08);
-  
-  --success: #059669;
-  --success-light: rgba(16, 185, 129, 0.1);
-  --success-border: #a7f3d0;
-  
-  --warning: #d97706;
-  --warning-light: rgba(245, 158, 11, 0.1);
-  --warning-border: #fde68a;
-  
-  --danger: #dc2626;
-  --danger-light: rgba(239, 68, 68, 0.08);
-  --danger-border: #fecaca;
-  
-  --purple: #7c3aed;
-  --purple-light: rgba(124, 58, 237, 0.08);
-  
-  /* Typography Colors */
+
+  /* Typography */
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
   --text-inverse: #ffffff;
-  
+
+  /* Minimal Alert Accents (Used strictly for status) */
+  --success: #10b981;
+  --success-light: #f0fdf4;
+  --success-border: #bbf7d0;
+
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --danger-border: #fecaca;
+
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --warning-border: #fde68a;
+
+  /* Fonts & Radius */
   --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  
-  /* Modern Soft Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
-  --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
-  --shadow-xl: 0 20px 30px -10px rgba(15, 23, 42, 0.1);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Soft Professional Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 20px -5px rgba(15, 23, 42, 0.07), 0 6px 8px -6px rgba(15, 23, 42, 0.03);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.08);
 }
 
 * {
@@ -76,8 +86,8 @@ body {
 
 /* Custom Clean Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
   background: var(--bg-primary);
@@ -114,7 +124,7 @@ body {
 }
 
 .page-wrapper {
-  padding: 32px 40px 60px 40px;
+  padding: 28px 36px 60px 36px;
   flex: 1;
   max-width: 1560px;
   width: 100%;
@@ -123,17 +133,17 @@ body {
 
 @media (max-width: 768px) {
   .page-wrapper {
-    padding: 20px 16px;
+    padding: 18px 14px;
   }
 }
 
-/* Modern Clean White Cards */
+/* Maritime Cards in Two-Color Theme */
 .maritime-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .maritime-card:hover {
@@ -157,67 +167,59 @@ body {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #0284c7, #0f3460, #7c3aed);
+  background: linear-gradient(90deg, var(--primary), var(--accent));
 }
 
-/* Buttons */
+/* Two-Tone Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 9px 18px;
   border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   border: none;
   font-family: var(--font-main);
   text-decoration: none;
   white-space: nowrap;
 }
 
+/* Primary: Deep Maritime Navy */
 .btn-primary {
-  background: linear-gradient(135deg, #0f3460 0%, #0284c7 100%);
+  background: var(--primary);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(15, 52, 96, 0.25);
+  box-shadow: 0 2px 6px rgba(15, 52, 96, 0.2);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #16213e 0%, #0369a1 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  background: var(--primary-hover);
+  box-shadow: 0 4px 12px rgba(15, 52, 96, 0.3);
 }
 
+/* Secondary: White / Subtle Navy Border */
 .btn-secondary {
   background: #ffffff;
-  color: var(--text-primary);
+  color: var(--primary);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-xs);
 }
 .btn-secondary:hover {
-  background: var(--bg-secondary);
-  border-color: var(--border-light);
-  color: var(--primary);
+  background: var(--primary-light);
+  border-color: var(--primary-border);
+  color: var(--primary-hover);
 }
 
-.btn-success {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+/* Accent: Ocean Blue Button */
+.btn-accent {
+  background: var(--accent);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
 }
-.btn-success:hover {
-  background: linear-gradient(135deg, #047857 0%, #059669 100%);
-  transform: translateY(-1px);
-}
-
-.btn-danger {
-  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
-}
-.btn-danger:hover {
-  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+.btn-accent:hover {
+  background: var(--accent-hover);
 }
 
 .btn-outline {
@@ -227,29 +229,29 @@ body {
 }
 .btn-outline:hover {
   background: var(--bg-secondary);
-  color: var(--text-primary);
-  border-color: var(--cyan);
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 .btn-sm {
-  padding: 7px 14px;
+  padding: 6px 12px;
   font-size: 12px;
   border-radius: var(--radius-sm);
 }
 
 .btn-lg {
-  padding: 14px 28px;
-  font-size: 15px;
+  padding: 12px 24px;
+  font-size: 14px;
   border-radius: var(--radius-md);
   font-weight: 700;
 }
 
-/* Badges */
+/* Unified Two-Tone Badges (Eliminates Rainbow Clutter) */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
@@ -257,44 +259,32 @@ body {
   text-transform: uppercase;
 }
 
-.badge-cyan { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-.badge-blue { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
-.badge-green { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-.badge-amber { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-.badge-red { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-.badge-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+/* Theme Tone Badges */
+.badge-primary { background: var(--primary-light); color: var(--primary); border: 1px solid var(--primary-border); }
+.badge-cyan, .badge-accent, .badge-blue { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+.badge-neutral { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 
-/* Pulsing Live Dot */
+/* Status-specific (Used only for actual status/alerts) */
+.badge-green { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.badge-amber { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.badge-red { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.badge-purple { background: var(--primary-light); color: var(--primary); border: 1px solid var(--primary-border); }
+
+/* Live Telemetry Pulse Dot */
 .pulse-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--success);
-  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  background-color: var(--accent);
+  box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
   animation: pulse 1.8s infinite;
   display: inline-block;
 }
 
-.pulse-dot-danger {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--danger);
-  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-  animation: pulse-danger 1.8s infinite;
-  display: inline-block;
-}
-
 @keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-
-@keyframes pulse-danger {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(2, 132, 199, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
 }
 
 /* Inputs & Form Controls */
@@ -303,19 +293,18 @@ body {
   background: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  padding: 10px 14px;
+  padding: 9px 13px;
   border-radius: var(--radius-md);
   font-size: 13px;
   font-family: var(--font-main);
   outline: none;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   box-shadow: var(--shadow-xs);
 }
 
 .input-control:focus {
-  border-color: var(--accent-blue);
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
-  background: #ffffff;
 }
 
 .select-control {
@@ -323,21 +312,22 @@ body {
   background: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  padding: 10px 14px;
+  padding: 9px 13px;
   border-radius: var(--radius-md);
   font-size: 13px;
   font-family: var(--font-main);
   outline: none;
   cursor: pointer;
   box-shadow: var(--shadow-xs);
+  transition: all 0.18s ease;
 }
 
 .select-control:focus {
-  border-color: var(--accent-blue);
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
-/* Clean Tables with generous padding */
+/* Clean Tables with Disciplined Styling */
 .maritime-table {
   width: 100%;
   border-collapse: collapse;
@@ -346,17 +336,17 @@ body {
 
 .maritime-table th {
   background: #f8fafc;
-  color: #64748b;
+  color: #475569;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .maritime-table td {
-  padding: 16px 18px;
+  padding: 14px 16px;
   border-bottom: 1px solid #f1f5f9;
   font-size: 13px;
   color: var(--text-primary);
@@ -373,33 +363,34 @@ body {
   font-size: 11px;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
-  color: #0369a1;
-  padding: 4px 10px;
+  color: var(--primary);
+  padding: 3px 8px;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .hash-pill:hover {
-  background: #e0f2fe;
-  border-color: var(--accent-blue);
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent-hover);
 }
 
 /* Modal Overlay */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(6px);
+  background: rgba(15, 35, 66, 0.65);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 24px;
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.18s ease-out;
 }
 
 .modal-content {
@@ -415,39 +406,36 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.97); }
+  from { opacity: 0; transform: scale(0.98); }
   to { opacity: 1; transform: scale(1); }
 }
 
-/* QR Scanner Animation */
-.qr-scan-box {
-  position: relative;
-  width: 220px;
-  height: 220px;
-  margin: 0 auto;
-  border: 2px dashed #0284c7;
-  border-radius: 12px;
-  padding: 10px;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Leaflet Map Styles */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  font-family: var(--font-main) !important;
+  z-index: 1 !important;
+  background: #0d1e3d !important;
+  border-radius: 12px !important;
 }
 
-.qr-laser {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, #dc2626, transparent);
-  box-shadow: 0 0 10px #dc2626;
-  animation: scanLaser 2.2s ease-in-out infinite;
+.leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid #e2e8f0 !important;
+  padding: 6px !important;
 }
 
-@keyframes scanLaser {
-  0% { top: 5%; opacity: 0; }
-  15% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { top: 92%; opacity: 0; }
+.leaflet-popup-tip {
+  background: #ffffff !important;
+}
+
+.custom-port-marker,
+.custom-ship-marker,
+.custom-container-marker {
+  background: transparent !important;
+  border: none !important;
 }

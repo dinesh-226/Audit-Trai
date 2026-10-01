@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import {
   Box,
   ArrowLeft,
-  QrCode,
   Clock,
   ShieldCheck,
   AlertTriangle,
@@ -17,7 +16,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-export const ContainerDetailPage = ({ containerId, onBack, onOpenTimeline, onOpenQr, onOpenInspection, onOpenEvidence }) => {
+export const ContainerDetailPage = ({ containerId, onBack, onOpenTimeline, onOpenInspection, onOpenEvidence }) => {
   const { hasRole } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +47,7 @@ export const ContainerDetailPage = ({ containerId, onBack, onOpenTimeline, onOpe
   if (loading) {
     return (
       <div className="page-wrapper" style={{ textAlign: 'center', padding: '80px', color: 'var(--text-muted)' }}>
-        Loading 360° container profile and cryptographic ledger records...
+        Loading container profile and activity records...
       </div>
     );
   }
@@ -56,7 +55,7 @@ export const ContainerDetailPage = ({ containerId, onBack, onOpenTimeline, onOpe
   if (!data?.container) {
     return (
       <div className="page-wrapper" style={{ textAlign: 'center', padding: '80px' }}>
-        <h3>Container not found in ledger</h3>
+        <h3>Container not found</h3>
         <button onClick={onBack} className="btn btn-secondary" style={{ marginTop: '16px' }}>
           Back to Containers
         </button>
@@ -76,11 +75,6 @@ export const ContainerDetailPage = ({ containerId, onBack, onOpenTimeline, onOpe
         </button>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => onOpenQr(container)} className="btn btn-secondary">
-            <QrCode size={16} color="var(--cyan)" />
-            <span>Generate QR Shipping Pass</span>
-          </button>
-
           <button onClick={() => onOpenTimeline(container.containerId)} className="btn btn-primary">
             <Clock size={16} />
             <span>View Journey Roadmap</span>

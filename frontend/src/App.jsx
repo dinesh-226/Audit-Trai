@@ -4,7 +4,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
-import { ContainerQrModal } from './components/ContainerQrModal';
 import { TamperSimulatorModal } from './components/TamperSimulatorModal';
 import { ShipModal } from './components/ShipModal';
 import { ContainerModal } from './components/ContainerModal';
@@ -29,21 +28,63 @@ import { InspectionsPage } from './pages/InspectionsPage';
 import { EvidenceVaultPage } from './pages/EvidenceVaultPage';
 import { AiAssistantPage } from './pages/AiAssistantPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
+import { TemperatureMonitoringPage } from './pages/TemperatureMonitoringPage';
+import { ShipTimelinePage } from './pages/ShipTimelinePage';
 import { UsersPage } from './pages/UsersPage';
 
 function MainApp() {
-  const { user, token, loading } = useAuth();
+  const { user, token, loading, logout } = useAuth();
   
   // High-level view mode: 'app' | 'landing' | 'login' | 'register'
-  const [viewMode, setViewMode] = useState('landing');
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedShipId, setSelectedShipId] = useState(null);
-  const [selectedContainerId, setSelectedContainerId] = useState(null);
-  const [timelineContainerId, setTimelineContainerId] = useState(null);
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      const savedMode = localStorage.getItem('auditflow_view_mode');
+      const savedToken = localStorage.getItem('auditflow_token');
+      if (savedToken) {
+        if (savedMode === 'login' || savedMode === 'register') return 'app';
+        return savedMode || 'app';
+      }
+      return savedMode || 'landing';
+    } catch (e) {
+      return 'landing';
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      return localStorage.getItem('auditflow_active_tab') || 'dashboard';
+    } catch (e) {
+      return 'dashboard';
+    }
+  });
+
+  const [selectedShipId, setSelectedShipId] = useState(() => {
+    try {
+      return localStorage.getItem('auditflow_selected_ship_id') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [selectedContainerId, setSelectedContainerId] = useState(() => {
+    try {
+      return localStorage.getItem('auditflow_selected_container_id') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [timelineContainerId, setTimelineContainerId] = useState(() => {
+    try {
+      return localStorage.getItem('auditflow_timeline_container_id') || null;
+    } catch (e) {
+      return null;
+    }
+  });
 
   // Modals state
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
-  const [qrModalContainer, setQrModalContainer] = useState(null);
   const [showTamperModal, setShowTamperModal] = useState(false);
   const [editingShip, setEditingShip] = useState(null);
   const [showShipModal, setShowShipModal] = useState(false);
@@ -51,6 +92,53 @@ function MainApp() {
   const [showContainerModal, setShowContainerModal] = useState(false);
   const [inspectionContainerId, setInspectionContainerId] = useState(null);
   const [evidenceContainerId, setEvidenceContainerId] = useState(null);
+
+  // Persist viewMode
+  useEffect(() => {
+    try {
+      localStorage.setItem('auditflow_view_mode', viewMode);
+    } catch (e) {}
+  }, [viewMode]);
+
+  // Persist activeTab
+  useEffect(() => {
+    try {
+      localStorage.setItem('auditflow_active_tab', activeTab);
+    } catch (e) {}
+  }, [activeTab]);
+
+  // Persist selectedShipId
+  useEffect(() => {
+    try {
+      if (selectedShipId) {
+        localStorage.setItem('auditflow_selected_ship_id', selectedShipId);
+      } else {
+        localStorage.removeItem('auditflow_selected_ship_id');
+      }
+    } catch (e) {}
+  }, [selectedShipId]);
+
+  // Persist selectedContainerId
+  useEffect(() => {
+    try {
+      if (selectedContainerId) {
+        localStorage.setItem('auditflow_selected_container_id', selectedContainerId);
+      } else {
+        localStorage.removeItem('auditflow_selected_container_id');
+      }
+    } catch (e) {}
+  }, [selectedContainerId]);
+
+  // Persist timelineContainerId
+  useEffect(() => {
+    try {
+      if (timelineContainerId) {
+        localStorage.setItem('auditflow_timeline_container_id', timelineContainerId);
+      } else {
+        localStorage.removeItem('auditflow_timeline_container_id');
+      }
+    } catch (e) {}
+  }, [timelineContainerId]);
 
   // Global Ctrl+K shortcut for search
   useEffect(() => {
@@ -63,6 +151,34 @@ function MainApp() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Synchronize auth state with viewMode
+  useEffect(() => {
+    if (!loading) {
+      if ((user || token) && viewMode === 'landing') {
+        const savedMode = localStorage.getItem('auditflow_view_mode');
+        if (savedMode === 'app') {
+          setViewMode('app');
+        }
+      } else if (!user && !token && viewMode === 'app') {
+        setViewMode('landing');
+        setActiveTab('dashboard');
+      }
+    }
+  }, [user, token, loading, viewMode]);
+
+  const handleSignOut = () => {
+    logout();
+    try {
+      localStorage.removeItem('auditflow_view_mode');
+      localStorage.removeItem('auditflow_active_tab');
+      localStorage.removeItem('auditflow_selected_ship_id');
+      localStorage.removeItem('auditflow_selected_container_id');
+      localStorage.removeItem('auditflow_timeline_container_id');
+    } catch (e) {}
+    setViewMode('landing');
+    setActiveTab('dashboard');
+  };
 
   if (loading) {
     return (
@@ -86,14 +202,21 @@ function MainApp() {
 
   const handleAuthSuccess = (authUser) => {
     setViewMode('app');
-    setActiveTab('dashboard');
+    const savedTab = localStorage.getItem('auditflow_active_tab');
+    setActiveTab(savedTab && savedTab !== 'login' && savedTab !== 'register' ? savedTab : 'dashboard');
   };
 
   // If viewing the public Landing Page
   if (viewMode === 'landing') {
     return (
       <LandingPage
-        onLaunchApp={() => setViewMode('app')}
+        onLaunchApp={() => {
+          if (user) {
+            setViewMode('app');
+          } else {
+            setViewMode('login');
+          }
+        }}
         onOpenLogin={() => setViewMode('login')}
         onOpenRegister={() => setViewMode('register')}
       />
@@ -155,6 +278,7 @@ function MainApp() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onGoToLanding={() => setViewMode('landing')}
+        onSignOut={handleSignOut}
       />
 
       {/* Main Content Pane */}
@@ -162,6 +286,7 @@ function MainApp() {
         <Navbar
           onOpenGlobalSearch={() => setShowGlobalSearch(true)}
           onOpenProfile={() => setActiveTab('profile')}
+          onSignOut={handleSignOut}
         />
 
         {/* Dynamic Page Rendering */}
@@ -175,7 +300,6 @@ function MainApp() {
                 setActiveTab(tab);
               }
             }}
-            onOpenQr={(c) => setQrModalContainer(c)}
             onOpenTamperModal={() => setShowTamperModal(true)}
           />
         )}
@@ -184,6 +308,11 @@ function MainApp() {
           <ShipsPage
             onSelectShip={handleSelectShip}
             onOpenShipModal={handleOpenShipModal}
+            onNavigate={(tab, id) => {
+              if (tab === 'ship-timeline' && id) setSelectedShipId(id);
+              if (tab === 'ship-detail' && id) setSelectedShipId(id);
+              setActiveTab(tab);
+            }}
           />
         )}
 
@@ -192,8 +321,12 @@ function MainApp() {
             shipId={selectedShipId}
             onBack={() => setActiveTab('ships')}
             onSelectContainer={handleSelectContainer}
-            onOpenQr={(c) => setQrModalContainer(c)}
             onOpenShipModal={handleOpenShipModal}
+            onNavigate={(tab, id) => {
+              if (tab === 'ship-timeline' && id) setSelectedShipId(id);
+              if (tab === 'timeline' && id) setTimelineContainerId(id);
+              setActiveTab(tab);
+            }}
           />
         )}
 
@@ -201,7 +334,6 @@ function MainApp() {
           <ContainersPage
             onSelectContainer={handleSelectContainer}
             onOpenTimeline={handleOpenTimeline}
-            onOpenQr={(c) => setQrModalContainer(c)}
             onOpenContainerModal={handleOpenContainerModal}
           />
         )}
@@ -211,7 +343,6 @@ function MainApp() {
             containerId={selectedContainerId}
             onBack={() => setActiveTab('containers')}
             onOpenTimeline={handleOpenTimeline}
-            onOpenQr={(c) => setQrModalContainer(c)}
             onOpenInspection={(cId) => setInspectionContainerId(cId)}
             onOpenEvidence={(cId) => setEvidenceContainerId(cId)}
           />
@@ -221,7 +352,6 @@ function MainApp() {
           <ContainerTimelinePage
             initialContainerId={timelineContainerId}
             onBack={() => setActiveTab('containers')}
-            onOpenQr={(c) => setQrModalContainer(c)}
           />
         )}
 
@@ -257,6 +387,40 @@ function MainApp() {
           <AiAssistantPage />
         )}
 
+        {activeTab === 'ship-timeline' && (
+          <ShipTimelinePage
+            initialShipId={selectedShipId}
+            onNavigate={(tab, id) => {
+              if (tab === 'ship-detail' && id) {
+                setSelectedShipId(id);
+              }
+              if (tab === 'timeline' && id) {
+                setTimelineContainerId(id);
+              }
+              setActiveTab(tab);
+            }}
+          />
+        )}
+
+        {activeTab === 'temperature' && (
+          <AnalyticsPage
+            initialTab="temperature"
+            onNavigate={(tab, id) => {
+              setActiveTab(tab);
+              if (tab === 'timeline' && id) setTimelineContainerId(id);
+            }}
+          />
+        )}
+
+        {activeTab === 'analytics' && (
+          <AnalyticsPage
+            onNavigate={(tab, id) => {
+              setActiveTab(tab);
+              if (tab === 'timeline' && id) setTimelineContainerId(id);
+            }}
+          />
+        )}
+
         {activeTab === 'reports' && (
           <ReportsPage />
         )}
@@ -266,7 +430,7 @@ function MainApp() {
         )}
 
         {activeTab === 'profile' && (
-          <ProfilePage />
+          <ProfilePage onSignOut={handleSignOut} />
         )}
 
         {activeTab === 'settings' && (
@@ -275,19 +439,19 @@ function MainApp() {
               SECURITY & SYSTEM GOVERNANCE
             </div>
             <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: '0 0 20px 0' }}>
-              System Settings & Blockchain Ledger Controls
+              System Settings & Maritime Audit Trail Controls
             </h1>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
               <div className="maritime-card" style={{ padding: '24px' }}>
                 <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
-                  Blockchain Ledger Security
+                  Audit Trail Security & Verification
                 </h3>
                 <p style={{ fontSize: '13px', color: '#475569', marginBottom: '16px', lineHeight: 1.5 }}>
-                  Forward SHA-256 block chaining is active. Every database write is cryptographically sealed.
+                  Forward SHA-256 audit chaining is active. Every database write is cryptographically logged and sealed.
                 </p>
                 <button onClick={() => setShowTamperModal(true)} className="btn btn-secondary">
-                  Open Tamper Simulator
+                  System Integrity & Tamper Test
                 </button>
               </div>
 
@@ -301,7 +465,7 @@ function MainApp() {
                 <button
                   onClick={async () => {
                     if (confirm('Re-seed database with fresh demo data?')) {
-                      await fetch('/api/system/reseed', { method: 'POST' });
+                      await api.system.reseed();
                       window.location.reload();
                     }
                   }}
@@ -325,14 +489,6 @@ function MainApp() {
           }}
           onSelectShip={handleSelectShip}
           onNavigateTab={(tab) => setActiveTab(tab)}
-        />
-      )}
-
-      {/* Container QR Shipping Pass Modal */}
-      {qrModalContainer && (
-        <ContainerQrModal
-          container={qrModalContainer}
-          onClose={() => setQrModalContainer(null)}
         />
       )}
 

@@ -15,7 +15,7 @@ export const AuthPage = ({ initialTab = 'login', onBackToHome, onSuccess }) => {
   const [loading, setLoading] = useState(false);
 
   const demoAccounts = [
-    { name: 'Capt. Rajesh Menon', email: 'admin@auditflow.com', role: 'admin', label: '👑 Admin (Full Access)', desc: 'Security Governance & Tamper Controls' },
+    { name: 'Capt. Rajesh Menon', email: 'admin@auditflow.com', role: 'admin', label: '👑 Admin (Full Access)', desc: 'Security Governance & System Integrity' },
     { name: 'Sunita Rao', email: 'portmanager@auditflow.com', role: 'port_manager', label: '⚓ Port Manager', desc: 'Mumbai Terminal & Loading' },
     { name: 'Capt. Vikram Sengupta', email: 'shipmanager@auditflow.com', role: 'ship_manager', label: '🚢 Ship Manager', desc: 'MSC Irina Master' },
     { name: 'Rahul Sharma', email: 'inspector@auditflow.com', role: 'inspector', label: '🔍 Inspector', desc: 'Customs & Bolt Seal Audit' },
@@ -133,7 +133,7 @@ export const AuthPage = ({ initialTab = 'login', onBackToHome, onSuccess }) => {
             marginBottom: '10px'
           }}>
             <span style={{ fontSize: '11px', fontWeight: 800, color: '#0f3460', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              ⚡ 1-Click Quick Role Switcher:
+              ⚡ Quick Demo Officer Accounts:
             </span>
             <span style={{ fontSize: '10px', color: '#059669', fontWeight: 700 }}>
               Password: audit123

@@ -60,7 +60,7 @@ export const TamperSimulatorModal = ({ onClose, onTamperExecuted }) => {
     setError(null);
     try {
       await api.auditLogs.repairChain();
-      setResult({ message: 'Blockchain ledger successfully repaired! All hashes re-calculated and verified.' });
+      setResult({ message: 'Audit trail ledger successfully repaired! All hashes re-calculated and verified.' });
       if (onTamperExecuted) onTamperExecuted();
     } catch (e) {
       setError(e.message || 'Failed to repair chain');
@@ -233,7 +233,7 @@ export const TamperSimulatorModal = ({ onClose, onTamperExecuted }) => {
             style={{ color: 'var(--success)', borderColor: 'rgba(16, 185, 129, 0.4)' }}
           >
             <RotateCcw size={14} />
-            <span>Repair & Restore Blockchain</span>
+            <span>Repair & Restore Audit Trail</span>
           </button>
 
           <button onClick={onClose} className="btn btn-secondary btn-sm">

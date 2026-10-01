@@ -115,7 +115,7 @@ export const EvidenceModal = ({ containerId, onClose, onSaved }) => {
                 Attach Cryptographic Evidence to Ledger
               </h3>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                File will be hashed with SHA-256 and sealed into the blockchain audit trail
+                File will be hashed with SHA-256 and sealed into the maritime audit trail
               </div>
             </div>
           </div>

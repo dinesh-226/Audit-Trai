@@ -43,13 +43,13 @@ export const InspectionsPage = ({ onOpenInspectionModal }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-            CUSTOMS & SAFETY VERIFICATION
+            INSPECTIONS
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-            Container Inspections & Checklists
+            Container Inspections
           </h1>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Official physical inspection records, bolt seal audits, and pass/fail certificates
+            Container safety checks, seal inspections, and pass/fail status
           </div>
         </div>
 
@@ -59,7 +59,7 @@ export const InspectionsPage = ({ onOpenInspectionModal }) => {
             className="btn btn-primary"
           >
             <Plus size={16} />
-            <span>Perform Inspection</span>
+            <span>New Inspection</span>
           </button>
         )}
       </div>

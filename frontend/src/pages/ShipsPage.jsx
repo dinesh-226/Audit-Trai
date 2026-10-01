@@ -15,7 +15,7 @@ import {
   Clock
 } from 'lucide-react';
 
-export const ShipsPage = ({ onSelectShip, onOpenShipModal }) => {
+export const ShipsPage = ({ onSelectShip, onOpenShipModal, onNavigate }) => {
   const { hasRole } = useAuth();
   const [ships, setShips] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,13 +57,13 @@ export const ShipsPage = ({ onSelectShip, onOpenShipModal }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-            MARITIME FLEET MANAGEMENT
+            FLEET
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-            Cargo Vessels & Carrier Fleet
+            Ships & Fleet
           </h1>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Monitor ship voyages, onboard container manifests, and AIS tracking
+            Monitor ships, routes, and containers onboard
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export const ShipsPage = ({ onSelectShip, onOpenShipModal }) => {
             className="btn btn-primary"
           >
             <Plus size={16} />
-            <span>Register Vessel</span>
+            <span>Add Ship</span>
           </button>
         )}
       </div>
@@ -201,7 +201,16 @@ export const ShipsPage = ({ onSelectShip, onOpenShipModal }) => {
                   style={{ flex: 1 }}
                 >
                   <Ship size={14} />
-                  <span>Ship Details & Manifest</span>
+                  <span>Manifest</span>
+                </button>
+                <button
+                  onClick={() => onNavigate ? onNavigate('ship-timeline', ship.shipId) : onSelectShip(ship)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontWeight: 700, color: '#0f3460' }}
+                  title="View Chronological Milestone Timeline"
+                >
+                  <Clock size={14} />
+                  <span>Timeline</span>
                 </button>
                 {hasRole('admin', 'ship_manager') && (
                   <button

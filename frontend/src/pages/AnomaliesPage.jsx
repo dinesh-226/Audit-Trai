@@ -63,13 +63,13 @@ export const AnomaliesPage = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
         <div>
           <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-            BEHAVIORAL & HEURISTIC SECURITY MONITORING
+            SECURITY & ISSUE ALERTS
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-            AI Maritime Anomaly Detection Engine
+            Alerts & Issues
           </h1>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Automatic detection of out-of-sequence operations, teleportation jumps, and unverified unloading events
+            Automatic detection of unexpected unloading, route jumps, and container issues
           </div>
         </div>
 

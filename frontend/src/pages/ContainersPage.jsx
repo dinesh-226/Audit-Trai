@@ -6,7 +6,6 @@ import {
   Plus,
   Search,
   Filter,
-  QrCode,
   Clock,
   Shield,
   AlertTriangle,
@@ -18,7 +17,7 @@ import {
   X
 } from 'lucide-react';
 
-export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenQr, onOpenContainerModal }) => {
+export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenContainerModal }) => {
   const { hasRole } = useAuth();
   const [containers, setContainers] = useState([]);
   const [ships, setShips] = useState([]);
@@ -96,13 +95,13 @@ export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenQr, on
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-            CONTAINER CARGO MANAGEMENT
+            CONTAINERS
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-            Global Container Inventory & QR Pass
+            Container Inventory
           </h1>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Track container milestones, risk classifications, security seals, and status transitions
+            Track container locations, security seals, and journey progress
           </div>
         </div>
 
@@ -112,7 +111,7 @@ export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenQr, on
             className="btn btn-primary"
           >
             <Plus size={16} />
-            <span>Book / Register Container</span>
+            <span>Add Container</span>
           </button>
         )}
       </div>
@@ -297,14 +296,6 @@ export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenQr, on
                           <Clock size={13} />
                         </button>
 
-                        <button
-                          onClick={() => onOpenQr(c)}
-                          title="Generate QR Pass"
-                          className="btn btn-primary btn-sm"
-                        >
-                          <QrCode size={13} />
-                        </button>
-
                         {hasRole('admin', 'port_manager', 'ship_manager', 'inspector') && (
                           <button
                             onClick={() => {
@@ -378,7 +369,7 @@ export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenQr, on
               </div>
 
               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                This operation will automatically write an immutable SHA-256 block into the cryptographic ledger and run the anomaly detection engine.
+                This operation will automatically record an activity log entry and update the container status.
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
@@ -386,7 +377,7 @@ export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenQr, on
                   Cancel
                 </button>
                 <button onClick={handleExecuteStatusTransition} disabled={transitioning} className="btn btn-primary">
-                  {transitioning ? 'Recording...' : 'Commit to Ledger'}
+                  {transitioning ? 'Saving...' : 'Save Status Update'}
                 </button>
               </div>
             </div>

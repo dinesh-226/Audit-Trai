@@ -43,19 +43,19 @@ export const RiskAnalysisPage = ({ onSelectContainer }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
         <div>
           <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-            INTELLIGENT RISK SCORING & S.L.A. MONITORING
+            SAFETY & RISK CHECK
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-            Container Risk Analysis & Delay Tracking
+            Safety & Risk Analysis
           </h1>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Multi-factor evaluation analyzing anomalies, failed inspections, cold-chain temperature drifts, and transit delays
+            Review container risk levels, failed inspections, and transit delays
           </div>
         </div>
 
         <button onClick={fetchRiskProfiles} className="btn btn-secondary">
           <RotateCcw size={14} />
-          <span>Recalculate Scores</span>
+          <span>Refresh</span>
         </button>
       </div>
 

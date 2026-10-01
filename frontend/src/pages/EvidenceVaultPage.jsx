@@ -52,13 +52,13 @@ export const EvidenceVaultPage = ({ onOpenEvidenceModal }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-            CRYPTOGRAPHIC EVIDENCE VAULT
+            PHOTOS & DOCUMENTS
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-            Inspection Photos & Cargo Documents
+            Photos & Documents
           </h1>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Tamper-proof documents, bills of lading, and seal photos sealed with SHA-256 integrity checksums
+            Inspection photos, bills of lading, and shipping documents
           </div>
         </div>
 
@@ -68,7 +68,7 @@ export const EvidenceVaultPage = ({ onOpenEvidenceModal }) => {
             className="btn btn-primary"
           >
             <UploadCloud size={16} />
-            <span>Attach Document / Photo</span>
+            <span>Upload File</span>
           </button>
         )}
       </div>

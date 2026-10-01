@@ -67,26 +67,26 @@ export const ReportsPage = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
         <div>
           <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-            REGULATORY & COMPLIANCE REPORTING
+            REPORTS
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-            Audit Trail Reports & Compliance Certificates
+            Activity Reports
           </h1>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Generate formal IMO/ISPS maritime audit reports sealed with blockchain integrity verification
+            Create, view, and download audit reports and history logs
           </div>
         </div>
 
         <button onClick={handleExportCsv} className="btn btn-secondary">
           <Download size={16} />
-          <span>Export Full Ledger CSV</span>
+          <span>Export All Logs CSV</span>
         </button>
       </div>
 
       {/* Report Generation Form Card */}
       <div className="maritime-card-glow" style={{ padding: '24px', marginBottom: '32px' }}>
         <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700 }}>
-          Generate Formal Audit Certificate
+          Create New Report
         </h3>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '16px' }}>

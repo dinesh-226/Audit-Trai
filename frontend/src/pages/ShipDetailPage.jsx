@@ -9,14 +9,13 @@ import {
   Clock,
   ShieldCheck,
   Radio,
-  QrCode,
   Edit2,
   Navigation,
   CheckCircle,
   ExternalLink
 } from 'lucide-react';
 
-export const ShipDetailPage = ({ shipId, onBack, onSelectContainer, onOpenQr, onOpenShipModal }) => {
+export const ShipDetailPage = ({ shipId, onBack, onSelectContainer, onOpenShipModal, onNavigate }) => {
   const { hasRole } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -114,9 +113,19 @@ export const ShipDetailPage = ({ shipId, onBack, onSelectContainer, onOpenQr, on
 
           {/* Status Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
-            <span className={`badge ${ship.status === 'In Transit' ? 'badge-blue' : ship.status === 'Loading' ? 'badge-cyan' : 'badge-green'}`} style={{ fontSize: '13px', padding: '6px 14px' }}>
-              {ship.status}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => onNavigate ? onNavigate('ship-timeline', ship.shipId) : null}
+                className="btn btn-primary btn-sm"
+                style={{ background: '#0f3460', borderColor: '#0f3460', fontWeight: 700 }}
+              >
+                <Clock size={14} />
+                <span>Life-Cycle Timeline</span>
+              </button>
+              <span className={`badge ${ship.status === 'In Transit' ? 'badge-blue' : ship.status === 'Loading' ? 'badge-cyan' : 'badge-green'}`} style={{ fontSize: '13px', padding: '6px 14px' }}>
+                {ship.status}
+              </span>
+            </div>
 
             {hasRole('admin', 'ship_manager', 'port_manager') && (
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -251,21 +260,13 @@ export const ShipDetailPage = ({ shipId, onBack, onSelectContainer, onOpenQr, on
                         </span>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button
-                            onClick={() => onSelectContainer(c)}
-                            className="btn btn-outline btn-sm"
-                          >
-                            <Box size={12} />
-                            <span>Inspect</span>
-                          </button>
-                          <button
-                            onClick={() => onOpenQr(c)}
-                            className="btn btn-secondary btn-sm"
-                          >
-                            <QrCode size={12} color="var(--cyan)" />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => onSelectContainer(c)}
+                          className="btn btn-outline btn-sm"
+                        >
+                          <Box size={12} />
+                          <span>Inspect</span>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -283,7 +284,7 @@ export const ShipDetailPage = ({ shipId, onBack, onSelectContainer, onOpenQr, on
                 Ship Operational Log
               </h3>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                Immutable voyage events recorded in ledger
+                Voyage events and activity history
               </div>
             </div>
           </div>

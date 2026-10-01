@@ -25,7 +25,8 @@ import {
   Check,
   Ship,
   Box,
-  Copy
+  Copy,
+  LogOut
 } from 'lucide-react';
 
 const PRESET_AVATARS = [
@@ -37,9 +38,20 @@ const PRESET_AVATARS = [
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'
 ];
 
-export const ProfilePage = () => {
-  const { user, updateProfile } = useAuth();
+export const ProfilePage = ({ onSignOut }) => {
+  const { user, updateProfile, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('general'); // 'general' | 'security' | 'permissions' | 'activity'
+
+  const handleSignOut = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    logout();
+    if (onSignOut) {
+      onSignOut();
+    }
+  };
 
   // Profile Form State
   const [name, setName] = useState(user?.name || '');
@@ -236,24 +248,51 @@ export const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Quick Security Badge */}
-          <div style={{
-            background: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '12px 18px',
-            textAlign: 'right'
-          }}>
-            <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.5px' }}>
-              Cryptographic Key Status
+          {/* Quick Security Badge & Sign Out Button */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+            <div style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '12px 18px',
+              textAlign: 'right'
+            }}>
+              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.5px' }}>
+                Cryptographic Key Status
+              </div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#059669', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
+                <ShieldCheck size={16} color="#059669" />
+                <span>SHA-256 Signing Active</span>
+              </div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                Session: 7-Day JWT Bearer
+              </div>
             </div>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#059669', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
-              <ShieldCheck size={16} color="#059669" />
-              <span>SHA-256 Signing Active</span>
-            </div>
-            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-              Session: 7-Day JWT Bearer
-            </div>
+
+            <button
+              onClick={handleSignOut}
+              type="button"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#dc2626',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#fee2e2'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
+              title="Sign Out of Terminal & Return to Landing Page"
+            >
+              <LogOut size={13} color="#dc2626" />
+              <span>Sign Out of Terminal</span>
+            </button>
           </div>
         </div>
       </div>
@@ -573,7 +612,7 @@ export const ProfilePage = () => {
                 Officer Digital Signature Key
               </h3>
               <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px' }}>
-                Your public cryptographic signing identifier used to hash blockchain operations.
+                Your public cryptographic signing identifier used to sign maritime audit operations.
               </p>
 
               <div style={{
@@ -665,7 +704,7 @@ export const ProfilePage = () => {
                 <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>Ledger Integrity</h4>
               </div>
               <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
-                ✅ All users can run cryptographic SHA-256 integrity verification across the blockchain.
+                ✅ All users can run cryptographic SHA-256 integrity verification across the maritime audit trail.
               </p>
             </div>
           </div>
