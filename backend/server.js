@@ -17,6 +17,10 @@ const alertRoutes = require('./routes/alerts');
 const aiRoutes = require('./routes/ai');
 const reportRoutes = require('./routes/reports');
 const trackingRoutes = require('./routes/tracking');
+const portActivityRoutes = require('./routes/portActivities');
+const voyageRoutes = require('./routes/voyages');
+const analyticsRoutes = require('./routes/analytics');
+const temperatureRoutes = require('./routes/temperature');
 
 const { seedDatabase } = require('./services/seedDataService');
 
@@ -52,6 +56,10 @@ app.use('/api/alerts', alertRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/tracking', trackingRoutes);
+app.use('/api/port-activities', portActivityRoutes);
+app.use('/api/voyages', voyageRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/temperature', temperatureRoutes);
 
 // Health & System Diagnostics Check
 app.get('/api/health', (req, res) => {
