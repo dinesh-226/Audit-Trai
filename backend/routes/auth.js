@@ -10,6 +10,39 @@ const { createAuditLog } = require('../services/auditEngine');
 const JWT_SECRET =
   process.env.JWT_SECRET || 'fallback_secret_audit_trail_key_2026';
 
+const ALLOWED_ROLES = [
+  'admin',
+  'port_manager',
+  'ship_manager',
+  'inspector',
+  'viewer'
+];
+
+const createToken = (user) =>
+  jwt.sign(
+    {
+      id: user._id,
+      userId: user.userId,
+      email: user.email,
+      role: user.role
+    },
+    JWT_SECRET,
+    {
+      expiresIn: '7d'
+    }
+  );
+
+const userResponse = (user) => ({
+  userId: user.userId,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  department: user.department,
+  assignedPort: user.assignedPort,
+  assignedShipId: user.assignedShipId,
+  avatar: user.avatar
+});
+
 // =========================
 // LOGIN
 // =========================
@@ -23,8 +56,10 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    const cleanEmail = email.toLowerCase().trim();
+
     const user = await User.findOne({
-      email: email.toLowerCase().trim()
+      email: cleanEmail
     });
 
     if (!user) {
@@ -50,20 +85,8 @@ router.post('/login', async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        userId: user.userId,
-        email: user.email,
-        role: user.role
-      },
-      JWT_SECRET,
-      {
-        expiresIn: '7d'
-      }
-    );
+    const token = createToken(user);
 
-    // Audit login - failure should NOT stop login
     try {
       await createAuditLog({
         userId: user.userId,
@@ -85,16 +108,7 @@ router.post('/login', async (req, res) => {
     return res.json({
       success: true,
       token,
-      user: {
-        userId: user.userId,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        department: user.department,
-        assignedPort: user.assignedPort,
-        assignedShipId: user.assignedShipId,
-        avatar: user.avatar
-      }
+      user: userResponse(user)
     });
 
   } catch (error) {
@@ -105,7 +119,6 @@ router.post('/login', async (req, res) => {
     });
   }
 });
-
 
 // =========================
 // REGISTER
@@ -147,13 +160,16 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    let userId;
+    // Find the first unused sequential user ID.
     let userNumber = 1;
+    let userId;
 
     while (true) {
       userId = `USR-${String(userNumber).padStart(3, '0')}`;
 
-      const existingUserId = await User.findOne({ userId });
+      const existingUserId = await User.findOne({
+        userId
+      }).select('_id');
 
       if (!existingUserId) {
         break;
@@ -162,15 +178,7 @@ router.post('/register', async (req, res) => {
       userNumber++;
     }
 
-    const allowedRoles = [
-      'admin',
-      'port_manager',
-      'ship_manager',
-      'inspector',
-      'viewer'
-    ];
-
-    const finalRole = allowedRoles.includes(role)
+    const finalRole = ALLOWED_ROLES.includes(role)
       ? role
       : 'viewer';
 
@@ -188,20 +196,8 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        userId: user.userId,
-        email: user.email,
-        role: user.role
-      },
-      JWT_SECRET,
-      {
-        expiresIn: '7d'
-      }
-    );
+    const token = createToken(user);
 
-    // Audit registration - failure should NOT stop registration
     try {
       await createAuditLog({
         userId: user.userId,
@@ -227,30 +223,32 @@ router.post('/register', async (req, res) => {
     return res.status(201).json({
       success: true,
       token,
-      user: {
-        userId: user.userId,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        department: user.department,
-        assignedPort: user.assignedPort,
-        assignedShipId: user.assignedShipId,
-        avatar: user.avatar
-      }
+      user: userResponse(user)
     });
 
   } catch (error) {
     console.error('Registration error:', error);
 
+    // Handle MongoDB duplicate-key errors cleanly.
+    if (error.code === 11000) {
+      if (error.keyPattern?.email) {
+        return res.status(409).json({
+          error: 'An account with this email already exists'
+        });
+      }
+
+      if (error.keyPattern?.userId) {
+        return res.status(409).json({
+          error: 'Unable to generate a unique user ID. Please try again.'
+        });
+      }
+    }
+
     return res.status(500).json({
-      error: 'Failed to register new user',
-      details: process.env.NODE_ENV !== 'production'
-        ? error.message
-        : undefined
+      error: 'Failed to register new user'
     });
   }
 });
-
 
 // =========================
 // CURRENT USER PROFILE
@@ -278,7 +276,6 @@ router.get('/profile', protect, async (req, res) => {
   }
 });
 
-
 // =========================
 // DEMO USERS
 // =========================
@@ -301,7 +298,6 @@ router.get('/demo-users', async (req, res) => {
   }
 });
 
-
 // =========================
 // UPDATE USER ROLE
 // ADMIN ONLY
@@ -314,15 +310,7 @@ router.patch(
     try {
       const { role } = req.body;
 
-      const allowedRoles = [
-        'admin',
-        'port_manager',
-        'ship_manager',
-        'inspector',
-        'viewer'
-      ];
-
-      if (!allowedRoles.includes(role)) {
+      if (!ALLOWED_ROLES.includes(role)) {
         return res.status(400).json({
           error: 'Invalid role'
         });
@@ -380,6 +368,5 @@ router.patch(
     }
   }
 );
-
 
 module.exports = router;
