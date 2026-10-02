@@ -1,7 +1,6 @@
 // middleware/auth.js - Authentication & Role Authorization Middleware
 const jwt = require('jsonwebtoken');
-const User = require('../User');
-
+const User = require('../models/User');
 const protect = async (req, res, next) => {
   let token;
 
@@ -75,5 +74,9 @@ const requireVerified = (req, res, next) => {
 module.exports = {
   protect,
   authorize,
-  requireVerified
+  requireVerified,
+
+  requireAuth: protect,
+  requireRole: authorize,
+  authMiddleware: protect
 };

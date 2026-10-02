@@ -1,22 +1,28 @@
 export const BACKEND_URL = 'https://audit-trail-backend.vercel.app';
 
 export const API_BASE = import.meta.env.VITE_API_BASE_URL ||
-  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  (typeof window !== 'undefined' &&
+   (window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1')
     ? '/api'
     : `${BACKEND_URL}/api`);
 
 const getHeaders = () => {
   const token = localStorage.getItem('auditflow_token');
   const demoRole = localStorage.getItem('auditflow_demo_role');
+
   const headers = {
     'Content-Type': 'application/json'
   };
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
+
   if (demoRole) {
     headers['x-demo-role'] = demoRole;
   }
+
   return headers;
 };
 
