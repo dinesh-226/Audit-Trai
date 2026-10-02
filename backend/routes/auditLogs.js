@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const AuditLog = require('../AuditLog');
+const AuditLog = require('../models/AuditLog');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { verifyAuditChain, simulateTamper, repairChain } = require('../services/auditEngine');
 
@@ -16,6 +16,7 @@ router.get('/', async (req, res) => {
       action,
       entityType,
       location,
+      ipAddress,
       startDate,
       endDate,
       limit = 50,
@@ -45,6 +46,9 @@ router.get('/', async (req, res) => {
     if (location && location.trim() && location !== 'undefined' && location !== 'null' && location !== 'All Locations' && location !== 'All') {
       query.location = new RegExp(location.trim(), 'i');
     }
+    if (ipAddress && ipAddress.trim() && ipAddress !== 'undefined' && ipAddress !== 'null' && ipAddress !== 'All') {
+      query.ipAddress = new RegExp(ipAddress.trim(), 'i');
+    }
 
     if ((startDate && startDate !== 'undefined' && startDate !== 'null') || (endDate && endDate !== 'undefined' && endDate !== 'null')) {
       query.timestamp = {};
@@ -61,7 +65,8 @@ router.get('/', async (req, res) => {
         { entityId: new RegExp(cleanSearch, 'i') },
         { username: new RegExp(cleanSearch, 'i') },
         { action: new RegExp(cleanSearch, 'i') },
-        { location: new RegExp(cleanSearch, 'i') }
+        { location: new RegExp(cleanSearch, 'i') },
+        { ipAddress: new RegExp(cleanSearch, 'i') }
       ];
     }
 
@@ -119,7 +124,7 @@ router.get('/stats/summary', async (req, res) => {
   }
 });
 
-// Run Cryptographic Blockchain Integrity Verification
+// Run Cryptographic Audit Trail Integrity Verification
 router.get('/verify-integrity', async (req, res) => {
   try {
     const result = await verifyAuditChain();
@@ -151,7 +156,7 @@ router.post('/simulate-tamper', requireAuth, requireRole('admin'), async (req, r
     const tamperedLog = await simulateTamper(targetAuditId, fieldName, fakeValue);
 
     res.json({
-      message: `Simulated illicit database modification on audit block #${tamperedLog.sequenceNumber} (${tamperedLog.auditId})`,
+      message: `Simulated illicit database modification on audit record #${tamperedLog.sequenceNumber} (${tamperedLog.auditId})`,
       targetAuditId,
       alteredField: fieldName,
       fakeValue,
@@ -167,11 +172,11 @@ router.post('/repair-chain', requireAuth, requireRole('admin'), async (req, res)
   try {
     const result = await repairChain();
     res.json({
-      message: `Blockchain hash chain successfully repaired across ${result.repairedCount} blocks.`,
+      message: `Audit trail hash chain successfully repaired across ${result.repairedCount} entries.`,
       result
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to repair blockchain chain' });
+    res.status(500).json({ error: 'Failed to repair audit trail chain' });
   }
 });
 

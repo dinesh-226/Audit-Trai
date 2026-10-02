@@ -1,6 +1,6 @@
 // controllers/reportController.js - Compliance & Audit Reporting Controller
 const Report = require('../models/Report');
-const AuditLog = require('../AuditLog');
+const AuditLog = require('../models/AuditLog');
 const { verifyChainIntegrity } = require('../services/hashChainService');
 const { recordAuditLog } = require('../middleware/auditLogger');
 const { generateHtmlReport } = require('../services/exportService');
@@ -56,7 +56,7 @@ const generateReport = async (req, res) => {
       complianceScore -= 35;
       findings.push('CRITICAL FINDING: Cryptographic hash chain validation failed. Data integrity compromise detected.');
     } else {
-      findings.push('PASS: SHA-256 blockchain integrity verification passed with 100% block continuity.');
+      findings.push('PASS: SHA-256 audit trail integrity verification passed with 100% record continuity.');
     }
 
     if (criticalEvents > 0) {

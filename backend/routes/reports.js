@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Report = require('../models/Report');
-const AuditLog = require('../AuditLog');
+const AuditLog = require('../models/AuditLog');
 const Container = require('../models/Container');
 const Ship = require('../models/Ship');
 const Anomaly = require('../models/Anomaly');
@@ -37,7 +37,7 @@ router.post('/generate', requireAuth, requireRole('admin', 'port_manager', 'ship
     const anomaliesCount = await Anomaly.countDocuments({ status: 'Active' });
     const highRiskContainers = await Container.countDocuments({ riskLevel: { $in: ['High', 'Critical'] } });
 
-    // Verify blockchain integrity for this report
+    // Verify audit trail integrity for this report
     const integrityResult = await verifyAuditChain();
 
     const count = await Report.countDocuments();

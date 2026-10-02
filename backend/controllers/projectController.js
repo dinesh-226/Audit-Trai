@@ -1,6 +1,6 @@
 const Project = require('../models/Project');
 const Task = require('../models/Task');
-const User = require('../models/User');
+const User = require('../User');
 const logAudit = require('../utils/auditLogger');
 
 // GET /api/projects - List projects with status and role filtering

@@ -43,6 +43,43 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'approved'
+  },
+  approvedBy: {
+    type: String,
+    default: null
+  },
+  approvalDate: {
+    type: Date,
+    default: null
+  },
+  resetPasswordCode: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null
+  },
+  failedLoginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lastFailedLogin: {
+    type: Date,
+    default: null
+  },
+  lastFailedIp: {
+    type: String,
+    default: null
+  },
+  createdBy: {
+    type: String,
+    default: 'Self-Registration'
+  },
   lastLogin: {
     type: Date,
     default: Date.now

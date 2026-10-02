@@ -1,6 +1,6 @@
 const Task = require('../models/Task');
 const Project = require('../models/Project');
-const User = require('../models/User');
+const User = require('../User');
 const logAudit = require('../utils/auditLogger');
 
 // GET /api/tasks?projectId=...&assignedTo=...
