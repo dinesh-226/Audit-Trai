@@ -71,7 +71,11 @@ export const ChartCard = ({
     );
   }
 
-  if (!data || !data.datasets || data.datasets.length === 0 || !data.labels || data.labels.length === 0) {
+  const hasRecordedValues = data?.datasets?.some(dataset =>
+    dataset.data?.some(value => typeof value === 'number' && Number.isFinite(value) && value !== 0)
+  );
+
+  if (!data || !data.datasets || data.datasets.length === 0 || !data.labels || data.labels.length === 0 || !hasRecordedValues) {
     return (
       <div className="maritime-card" style={{ padding: '20px', minHeight: `${height + 80}px`, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
         <BarChart3 size={32} color="#94a3b8" style={{ marginBottom: '8px' }} />

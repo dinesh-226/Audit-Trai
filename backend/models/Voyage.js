@@ -16,6 +16,11 @@ const VoyageDelaySchema = new mongoose.Schema({
   reportedBy: { type: String, default: 'Ship Master' }
 }, { _id: false });
 
+const VoyageCoordinatesSchema = new mongoose.Schema({
+  lat: Number,
+  lng: Number
+}, { _id: false });
+
 const VoyageSchema = new mongoose.Schema({
   voyageId: {
     type: String,
@@ -71,10 +76,7 @@ const VoyageSchema = new mongoose.Schema({
     type: Number,
     default: 312
   },
-  currentCoordinates: {
-    lat: { type: Number, default: 14.82 },
-    lng: { type: Number, default: 74.15 }
-  },
+  currentCoordinates: { type: VoyageCoordinatesSchema, default: undefined },
   waypoints: [WaypointSchema],
   delays: [VoyageDelaySchema],
   cargoContainersCount: {

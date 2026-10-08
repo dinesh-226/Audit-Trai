@@ -1,5 +1,13 @@
 const mongoose = require('mongoose');
 
+const ShipCoordinatesSchema = new mongoose.Schema({
+  lat: Number,
+  lng: Number,
+  heading: Number,
+  speedKnots: Number,
+  lastUpdated: Date
+}, { _id: false });
+
 const ShipSchema = new mongoose.Schema({
   shipId: {
     type: String,
@@ -57,12 +65,7 @@ const ShipSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  coordinates: {
-    lat: { type: Number, default: 18.94 },
-    lng: { type: Number, default: 72.83 },
-    heading: { type: Number, default: 90 },
-    speedKnots: { type: Number, default: 16.5 }
-  },
+  coordinates: { type: ShipCoordinatesSchema, default: undefined },
   eta: {
     type: Date
   },

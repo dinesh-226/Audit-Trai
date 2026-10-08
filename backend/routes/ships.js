@@ -72,8 +72,8 @@ router.get('/:shipId', async (req, res) => {
   }
 });
 
-// Create Ship (Admin only)
-router.post('/', requireAuth, requireRole('admin'), async (req, res) => {
+// Create Ship (Admin or Ship Manager)
+router.post('/', requireAuth, requireRole('admin', 'ship_manager'), async (req, res) => {
   try {
     const { name, imoNumber, type, capacityTEU, currentLocation, destination, departurePort, arrivalPort, captain, flag } = req.body;
     

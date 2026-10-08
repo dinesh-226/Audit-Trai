@@ -13,7 +13,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 
-export const InspectionsPage = ({ onOpenInspectionModal }) => {
+export const InspectionsPage = ({ onOpenInspectionModal, refreshKey }) => {
   const { hasRole } = useAuth();
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ export const InspectionsPage = ({ onOpenInspectionModal }) => {
 
   useEffect(() => {
     fetchInspections();
-  }, [resultFilter]);
+  }, [resultFilter, refreshKey]);
 
   const fetchInspections = async () => {
     setLoading(true);
@@ -55,7 +55,7 @@ export const InspectionsPage = ({ onOpenInspectionModal }) => {
 
         {hasRole('admin', 'inspector', 'port_manager') && (
           <button
-            onClick={() => onOpenInspectionModal(null)}
+            onClick={() => onOpenInspectionModal?.(null)}
             className="btn btn-primary"
           >
             <Plus size={16} />

@@ -10,7 +10,7 @@ const { verifyAuditChain } = require('../services/auditEngine');
 const { generateMaritimeHtmlReport, generateAuditCsv } = require('../services/exportService');
 
 // List Generated Reports
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     const reports = await Report.find().sort({ createdAt: -1 });
     res.json(reports);
@@ -24,12 +24,9 @@ router.post('/generate', requireAuth, requireRole('admin', 'port_manager', 'ship
   try {
     const { title, reportType, startDate, endDate, format = 'PDF' } = req.body;
 
-    const query = {};
-    if (startDate || endDate) {
-      query.timestamp = {};
-      if (startDate) query.timestamp.$gte = new Date(startDate);
-      if (endDate) query.timestamp.$lte = new Date(endDate);
-    }
+    const rangeStart = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 86400000);
+    const rangeEnd = endDate ? new Date(endDate) : new Date();
+    const query = { timestamp: { $gte: rangeStart, $lte: rangeEnd } };
 
     const logs = await AuditLog.find(query).sort({ sequenceNumber: 1 });
     const totalContainers = await Container.countDocuments();
@@ -48,10 +45,7 @@ router.post('/generate', requireAuth, requireRole('admin', 'port_manager', 'ship
       reportId,
       title: title || `${reportType || 'Comprehensive'} Audit & Operations Report`,
       reportType: reportType || 'Comprehensive Audit Trail',
-      dateRange: {
-        startDate: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 86400000),
-        endDate: endDate ? new Date(endDate) : new Date()
-      },
+      dateRange: { startDate: rangeStart, endDate: rangeEnd },
       generatedBy: req.user.name,
       generatedByRole: req.user.role,
       format,
@@ -61,12 +55,16 @@ router.post('/generate', requireAuth, requireRole('admin', 'port_manager', 'ship
         totalShips,
         anomaliesFound: anomaliesCount,
         highRiskContainers,
-        integrityVerified: integrityResult.verified
+        integrityVerified: integrityResult.verified && integrityResult.totalRecords > 0
       },
-      integrityStatus: integrityResult.verified ? 'VERIFIED' : 'COMPROMISED',
-      tamperCheckDetails: integrityResult.message,
+      integrityStatus: integrityResult.totalRecords === 0
+        ? 'PENDING'
+        : integrityResult.verified ? 'VERIFIED' : 'COMPROMISED',
+      tamperCheckDetails: integrityResult.totalRecords === 0
+        ? 'No audit records are available to verify.'
+        : integrityResult.message,
       dataSnapshot: {
-        latestBlockHash: integrityResult.latestHash || '0000',
+        latestBlockHash: integrityResult.latestHash || null,
         sampleLogCount: logs.length
       }
     });
@@ -91,13 +89,21 @@ router.get('/:reportId/export-html', async (req, res) => {
       return res.status(404).send('Report not found');
     }
 
-    const logs = await AuditLog.find().sort({ sequenceNumber: 1 }).limit(100);
+    const reportQuery = {};
+    if (report.dateRange?.startDate || report.dateRange?.endDate) {
+      reportQuery.timestamp = {};
+      if (report.dateRange.startDate) reportQuery.timestamp.$gte = report.dateRange.startDate;
+      if (report.dateRange.endDate) reportQuery.timestamp.$lte = report.dateRange.endDate;
+    }
+    const logs = await AuditLog.find(reportQuery).sort({ sequenceNumber: 1 }).limit(100);
     const integrityResult = await verifyAuditChain();
 
     const html = generateMaritimeHtmlReport(logs, report.title, {
       generatedBy: `${report.generatedBy} (${report.generatedByRole})`,
       reportType: report.reportType,
-      tamperStatus: integrityResult.verified ? 'VERIFIED_SECURE' : 'COMPROMISED',
+      tamperStatus: integrityResult.totalRecords === 0
+        ? 'NO_RECORDS'
+        : integrityResult.verified ? 'VERIFIED_SECURE' : 'COMPROMISED',
       latestHash: integrityResult.latestHash
     });
 

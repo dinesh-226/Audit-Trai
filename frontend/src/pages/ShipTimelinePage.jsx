@@ -36,12 +36,13 @@ import {
 
 export const ShipTimelinePage = ({ initialShipId, onNavigate }) => {
   const [ships, setShips] = useState([]);
-  const [selectedShipId, setSelectedShipId] = useState(initialShipId || 'SH-101');
+  const [selectedShipId, setSelectedShipId] = useState(initialShipId || '');
   const [voyages, setVoyages] = useState([]);
-  const [currentVoyage, setCurrentVoyage] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [containers, setContainers] = useState([]);
+  const [portActivities, setPortActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [timelineError, setTimelineError] = useState('');
   const [selectedStageFilter, setSelectedStageFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -54,304 +55,247 @@ export const ShipTimelinePage = ({ initialShipId, onNavigate }) => {
     loadShipTimelineData();
   }, [selectedShipId]);
 
+  useEffect(() => {
+    if (initialShipId) setSelectedShipId(initialShipId);
+  }, [initialShipId]);
+
   const loadShipTimelineData = async () => {
     setLoading(true);
+    setTimelineError('');
     try {
-      const [allShips, allVoyages, allAudits, allContainers] = await Promise.all([
+      const [allShips, allVoyages, allAudits, allContainers, allPortActivities] = await Promise.all([
         api.ships.getAll(),
         api.voyages.getAll(),
-        api.auditLogs.getAll({ limit: 100 }),
-        api.containers.getAll()
+        api.auditLogs.getAll({ limit: 500 }),
+        api.containers.getAll(),
+        api.portActivities.getAll({ limit: 500 })
       ]);
 
       setShips(allShips || []);
       setVoyages(allVoyages || []);
       setContainers(allContainers || []);
+      setPortActivities(allPortActivities || []);
 
-      // Selected Ship
-      const currentShip = (allShips || []).find(s => s.shipId === selectedShipId) || allShips?.[0];
-      if (currentShip && !selectedShipId) {
-        setSelectedShipId(currentShip.shipId);
-      }
+      const currentShip = (allShips || []).find(ship => ship.shipId === selectedShipId) || allShips?.[0] || null;
+      const resolvedShipId = currentShip?.shipId || '';
+      if (resolvedShipId !== selectedShipId) setSelectedShipId(resolvedShipId);
 
-      // Active or related voyage
-      const matchedVoyage = (allVoyages || []).find(v => v.shipId === selectedShipId) || allVoyages?.[0] || null;
-      setCurrentVoyage(matchedVoyage);
-
-      // Filter relevant audit logs for this ship
-      const shipAudits = (allAudits?.logs || allAudits || []).filter(a =>
-        a.shipId === selectedShipId ||
-        a.entityId === selectedShipId ||
-        (currentShip && (a.location?.includes(currentShip.name) || a.entityId?.includes(currentShip.name)))
+      const relatedContainers = (allContainers || []).filter(container =>
+        container.assignedShipId === resolvedShipId || container.assignedShipName === currentShip?.name
+      );
+      const relatedContainerIds = new Set(relatedContainers.map(container => container.containerId));
+      const shipAudits = (allAudits?.logs || allAudits || []).filter(audit =>
+        audit.shipId === resolvedShipId ||
+        audit.entityId === resolvedShipId ||
+        relatedContainerIds.has(audit.containerId) ||
+        relatedContainerIds.has(audit.entityId)
       );
       setAuditLogs(shipAudits);
     } catch (e) {
       console.error('Failed to load ship timeline data:', e);
+      setTimelineError(e.message || 'Failed to load ship timeline data.');
     } finally {
       setLoading(false);
     }
   };
 
-  const activeShip = ships.find(s => s.shipId === selectedShipId) || ships[0] || {
-    shipId: 'SH-101',
-    name: 'MSC Irina',
-    imoNumber: 'IMO 9805467',
-    flag: 'Panama',
-    captain: 'Capt. Jonathan Vance',
-    capacityTEU: 24346,
-    status: 'In Transit',
-    departurePort: 'Singapore Port',
-    arrivalPort: 'Mumbai Port',
-    currentLocation: 'Onboard MSC Irina (Arabian Sea)',
-    coordinates: { lat: 14.82, lng: 74.15, speedKnots: 19.8, heading: 312 }
-  };
+  const activeShip = ships.find(ship => ship.shipId === selectedShipId) || ships[0] || null;
 
   const onboardContainers = containers.filter(c =>
-    c.assignedShipId === selectedShipId ||
-    c.assignedShipName === activeShip.name ||
-    (c.status === 'In Transit' && c.assignedShipName?.includes(activeShip.name))
+    activeShip && (c.assignedShipId === activeShip.shipId || c.assignedShipName === activeShip.name)
   );
 
-  // Generate Chronological Timeline Milestones
+  // Build the timeline exclusively from persisted records.
   const buildTimelineEvents = () => {
+    if (!activeShip) return [];
     const events = [];
+    const addEvent = (event) => {
+      const timestamp = new Date(event.timestamp);
+      if (!event.timestamp || Number.isNaN(timestamp.getTime())) return;
+      events.push({
+        statusAtTime: 'Not recorded',
+        speedAtTime: 'Not recorded',
+        locationAtTime: event.location || 'Not recorded',
+        location: event.location || 'Not recorded',
+        performedBy: 'Not recorded',
+        userRole: 'Not recorded',
+        auditId: null,
+        hash: null,
+        cargoState: 'Not recorded',
+        details: '',
+        color: '#0284c7',
+        ...event,
+        timestamp: timestamp.toISOString(),
+        timeLabel: timestamp.toLocaleString()
+      });
+    };
 
-    // 1. Vessel Commissioning & Registration
-    events.push({
-      id: 'EVT-REG',
-      category: 'REGISTRATION',
-      stage: 'Created & Commissioned',
-      stepNumber: 1,
-      timeLabel: '14 Days Ago',
-      statusAtTime: 'Registered / Commissioned',
-      speedAtTime: '0.0 kts (In Shipyard)',
-      locationAtTime: 'Panama Maritime Registry & Global Command',
-      coordinatesAtTime: { lat: 8.98, lng: -79.52 },
-      title: `Vessel Registration & IMO Charter Verification`,
-      timestamp: new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString(),
-      location: 'Panama Maritime Registry / Global Central Command',
-      icon: Ship,
-      color: '#0f3460',
-      badge: 'Charter Commissioned',
-      performedBy: 'Flag State Administration',
-      userRole: 'Administrator',
-      auditId: 'AUD-REG-9805467',
-      hash: '9f82a1b4c3d2e1f0a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5',
-      cargoState: 'Empty / Pre-Charter Inspection Passed',
-      details: `Vessel ${activeShip.name} (${activeShip.imoNumber}) officially registered under ${activeShip.flag} flag with capacity of ${activeShip.capacityTEU?.toLocaleString()} TEU. Master ${activeShip.captain} appointed by fleet management.`
+    if (activeShip.createdAt) {
+      addEvent({
+        id: `SHIP-${activeShip.shipId}-CREATED`,
+        category: 'SHIP',
+        stage: 'Ship Record Created',
+        title: `Ship record created: ${activeShip.name}`,
+        timestamp: activeShip.createdAt,
+        location: activeShip.currentLocation,
+        icon: Ship,
+        badge: 'Ship record',
+        statusAtTime: activeShip.status,
+        details: `Ship ID: ${activeShip.shipId}; IMO: ${activeShip.imoNumber}.`
+      });
+    }
+
+    voyages.filter(voyage => voyage.shipId === activeShip.shipId).forEach(voyage => {
+      if (voyage.createdAt) {
+        addEvent({
+          id: `${voyage.voyageId}-CREATED`,
+          category: 'VOYAGE',
+          stage: 'Voyage Record Created',
+          title: `Voyage record created: ${voyage.voyageId}`,
+          timestamp: voyage.createdAt,
+          location: `${voyage.departurePort} to ${voyage.arrivalPort}`,
+          icon: Navigation,
+          badge: voyage.status,
+          statusAtTime: voyage.status,
+          auditId: voyage.auditId,
+          details: `Voyage ${voyage.voyageId} recorded for ${voyage.shipName}.`
+        });
+      }
+
+      (voyage.waypoints || []).forEach((waypoint, index) => {
+        if (!waypoint.passed || !waypoint.passedAt) return;
+        addEvent({
+          id: `${voyage.voyageId}-WAYPOINT-${index}`,
+          category: 'NAVIGATION',
+          stage: 'Waypoint Passed',
+          title: waypoint.name,
+          timestamp: waypoint.passedAt,
+          location: `${waypoint.lat}, ${waypoint.lng}`,
+          icon: MapPin,
+          badge: 'Passed',
+          statusAtTime: voyage.status,
+          auditId: voyage.auditId,
+          details: `Waypoint passage recorded for voyage ${voyage.voyageId}.`
+        });
+      });
+
+      (voyage.delays || []).forEach((delay, index) => {
+        addEvent({
+          id: `${voyage.voyageId}-DELAY-${index}`,
+          category: 'EXCEPTION',
+          stage: 'Voyage Delay',
+          title: delay.reason,
+          timestamp: delay.reportedAt,
+          location: `${voyage.departurePort} to ${voyage.arrivalPort}`,
+          icon: AlertTriangle,
+          color: '#b45309',
+          badge: `${delay.delayHours} hours`,
+          performedBy: delay.reportedBy,
+          statusAtTime: voyage.status,
+          auditId: voyage.auditId,
+          details: delay.mitigation || delay.reason
+        });
+      });
+
+      if (voyage.actualArrivalTime) {
+        addEvent({
+          id: `${voyage.voyageId}-ARRIVAL`,
+          category: 'VOYAGE',
+          stage: 'Arrival Recorded',
+          title: `Arrival recorded at ${voyage.arrivalPort}`,
+          timestamp: voyage.actualArrivalTime,
+          location: voyage.arrivalPort,
+          icon: Anchor,
+          badge: voyage.status,
+          statusAtTime: voyage.status,
+          auditId: voyage.auditId,
+          details: `Actual arrival recorded for voyage ${voyage.voyageId}.`
+        });
+      }
     });
 
-    // 2. Voyage Initialization & Plan
-    events.push({
-      id: 'EVT-VOY-INIT',
-      category: 'VOYAGE',
-      stage: 'Voyage Initialized',
-      stepNumber: 2,
-      timeLabel: '5 Days Ago',
-      statusAtTime: 'Scheduled / Route Chartered',
-      speedAtTime: '0.0 kts (At Anchorage)',
-      locationAtTime: `${activeShip.departurePort || 'Singapore Port'} Operations Command`,
-      coordinatesAtTime: { lat: 1.29, lng: 103.85 },
-      title: `Voyage ${currentVoyage?.voyageId || 'V-101'} Scheduled: ${activeShip.departurePort || 'Singapore'} ➔ ${activeShip.arrivalPort || 'Mumbai'}`,
-      timestamp: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
-      location: `${activeShip.departurePort || 'Singapore Port'} Operations Command`,
-      icon: Navigation,
-      color: '#0284c7',
-      badge: 'Voyage Scheduled',
-      performedBy: activeShip.captain,
-      userRole: 'Ship Manager',
-      auditId: `AUD-VOY-${currentVoyage?.voyageId || '101'}`,
-      hash: 'e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3',
-      cargoState: 'Manifest Lodged & Verified (Customs Pre-cleared)',
-      details: `Voyage chartered from ${activeShip.departurePort || 'Singapore Port'} to ${activeShip.arrivalPort || 'Mumbai Port'}. Distance: 2,410 NM. ETA calculated with weather-routing corridor.`
+    onboardContainers.forEach(container => {
+      (container.journeyMilestones || []).forEach((milestone, index) => {
+        const linkedToShip = milestone.shipId === activeShip.shipId ||
+          (!milestone.shipId && container.assignedShipId === activeShip.shipId);
+        if (!linkedToShip) return;
+        addEvent({
+          id: `${container.containerId}-MILESTONE-${milestone.milestoneId || index}`,
+          category: 'CARGO',
+          stage: milestone.stage,
+          title: `${container.containerId}: ${milestone.stage}`,
+          timestamp: milestone.timestamp,
+          location: milestone.location,
+          icon: Box,
+          badge: milestone.status,
+          statusAtTime: milestone.status,
+          performedBy: milestone.performedBy,
+          userRole: milestone.userRole,
+          auditId: milestone.auditId,
+          hash: milestone.hash,
+          cargoState: `${container.containerId}: ${container.cargoDescription}`,
+          details: milestone.notes || `Recorded container milestone for ${container.containerId}.`
+        });
+      });
     });
 
-    // 3. Port Berth Allocation & Arrival
-    events.push({
-      id: 'EVT-BERTH-ARR',
-      category: 'PORT_OPS',
-      stage: 'Berth Allocation & Arrival',
-      stepNumber: 3,
-      timeLabel: '4 Days Ago (08:00)',
-      statusAtTime: 'Docked & Berthed (All-Fast)',
-      speedAtTime: '0.0 kts (Moorings Secured)',
-      locationAtTime: `${activeShip.departurePort || 'Singapore Port'} - Quay North Berth #01`,
-      coordinatesAtTime: { lat: 1.28, lng: 103.84 },
-      title: `Vessel Arrived & Berthed at ${activeShip.departurePort || 'Singapore Port'}`,
-      timestamp: new Date(Date.now() - 4 * 24 * 3600 * 1000 - 6 * 3600 * 1000).toISOString(),
-      location: `${activeShip.departurePort || 'Singapore Port'} - Quay Berth #01`,
-      icon: Anchor,
-      color: '#0f3460',
-      badge: 'Berthed All-Fast',
-      performedBy: 'Port Master Control',
-      userRole: 'Port Manager',
-      auditId: 'AUD-BRT-88019',
-      hash: 'c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7',
-      cargoState: 'Quay Cranes Assigned / Gangs Onboard',
-      details: `Harbor pilot boarded at Outer Anchorage. Vessel assisted by 2 harbor tugs and secured all-fast at Quay North for container loading.`
+    portActivities.filter(activity =>
+      activity.entityId === activeShip.shipId ||
+      activity.details?.vesselName === activeShip.name ||
+      onboardContainers.some(container => container.containerId === activity.entityId)
+    ).forEach(activity => {
+      addEvent({
+        id: activity.activityId,
+        category: activity.activityType === 'OPERATIONAL_DELAY' ? 'EXCEPTION' : 'PORT_OPS',
+        stage: activity.activityType.replace(/_/g, ' '),
+        title: activity.details?.notes || `${activity.activityType.replace(/_/g, ' ')}: ${activity.entityId}`,
+        timestamp: activity.timestamp,
+        location: activity.port,
+        icon: Anchor,
+        color: activity.activityType === 'OPERATIONAL_DELAY' ? '#b45309' : '#0f3460',
+        badge: activity.status,
+        performedBy: activity.performedBy,
+        userRole: activity.userRole,
+        auditId: activity.auditId,
+        details: activity.details?.notes || activity.details?.delayReason || `Recorded port activity for ${activity.entityId}.`
+      });
     });
 
-    // 4. Cargo Loading & Security Seals
-    events.push({
-      id: 'EVT-CARGO-LOAD',
-      category: 'CARGO',
-      stage: 'Cargo Loading & Sealing',
-      stepNumber: 4,
-      timeLabel: '4 Days Ago (16:30)',
-      statusAtTime: 'Loading Completed & Sealed',
-      speedAtTime: '0.0 kts (Gantry Cranes Disengaged)',
-      locationAtTime: `${activeShip.departurePort || 'Singapore Port'} - Gantry Crane Bay #04`,
-      coordinatesAtTime: { lat: 1.28, lng: 103.84 },
-      title: `Container Manifest Loaded (${onboardContainers.length || 24} Units Stacked & Sealed)`,
-      timestamp: new Date(Date.now() - 4 * 24 * 3600 * 1000).toISOString(),
-      location: `${activeShip.departurePort || 'Singapore Port'} - Gantry Crane Bay #04`,
-      icon: Box,
-      color: '#0284c7',
-      badge: 'Loading Completed',
-      performedBy: 'Lead Stevedore Superintendent',
-      userRole: 'Inspector',
-      auditId: 'AUD-LOAD-77291',
-      hash: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
-      cargoState: 'All ISO 17712 Bolt Seals Verified & Reefer Grids Connected (-18.2°C)',
-      details: `Discharge and load operations completed. All ISO 17712 bolt seals verified intact. Cold-chain reefers connected to ship auxiliary power grid with temperatures locked.`
+    auditLogs.forEach(audit => {
+      const action = audit.action || 'Audit event';
+      const isException = /fail|delay|anomal|tamper|hold/i.test(action);
+      const newValue = audit.newValue == null
+        ? ''
+        : typeof audit.newValue === 'string' ? audit.newValue : JSON.stringify(audit.newValue);
+      addEvent({
+        id: audit.auditId,
+        category: isException ? 'EXCEPTION' : audit.entityType === 'Container' ? 'CARGO' : 'AUDIT',
+        stage: action.replace(/_/g, ' '),
+        title: `${action.replace(/_/g, ' ')}: ${audit.entityType} ${audit.entityId}`,
+        timestamp: audit.timestamp,
+        location: audit.location,
+        icon: isException ? AlertTriangle : ShieldCheck,
+        color: isException ? '#b45309' : '#0284c7',
+        badge: audit.entityType,
+        statusAtTime: newValue || action,
+        performedBy: audit.username,
+        userRole: audit.userRole,
+        auditId: audit.auditId,
+        hash: audit.currentHash,
+        cargoState: audit.containerId || 'Not linked to a container',
+        details: newValue || `${action} recorded for ${audit.entityType} ${audit.entityId}.`
+      });
     });
 
-    // 5. Departure from Origin Port
-    events.push({
-      id: 'EVT-DEP-ORIG',
-      category: 'VOYAGE',
-      stage: 'Departed Origin Port',
-      stepNumber: 5,
-      timeLabel: '3 Days Ago',
-      statusAtTime: 'In Transit / Sea Passage Commenced',
-      speedAtTime: '19.8 kts (Cruising Throttle)',
-      locationAtTime: `${activeShip.departurePort || 'Singapore Port'} - Outer Pilot Station`,
-      coordinatesAtTime: { lat: 1.22, lng: 103.95 },
-      title: `Vessel Cleared Port & Commenced Sea Passage`,
-      timestamp: new Date(Date.now() - 3 * 24 * 3600 * 1000 - 18 * 3600 * 1000).toISOString(),
-      location: `${activeShip.departurePort || 'Singapore Port'} - Outer Pilot Station`,
-      icon: Navigation,
-      color: '#10b981',
-      badge: 'Underway at Sea',
-      performedBy: activeShip.captain,
-      userRole: 'Ship Manager',
-      auditId: 'AUD-DEP-00281',
-      hash: 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3',
-      cargoState: 'Underway at Sea / Active Cargo Hold Ventilation',
-      details: `Harbor pilot disembarked at fairway buoy. Main propulsion engaged to cruising speed (19.8 knots). Track heading set on great circle shipping corridor.`
-    });
-
-    // 6. Waypoints Progression
-    events.push({
-      id: 'EVT-WP-MALACCA',
-      category: 'NAVIGATION',
-      stage: 'Waypoint Passage',
-      stepNumber: 6,
-      timeLabel: '2 Days Ago',
-      statusAtTime: 'In Transit / Passing Malacca Strait Corridor',
-      speedAtTime: '19.5 kts (Heading 295°)',
-      locationAtTime: 'Malacca Strait Traffic Separation Scheme (04.21°N, 99.85°E)',
-      coordinatesAtTime: { lat: 4.21, lng: 99.85 },
-      title: `Passed Corridor Waypoint: Malacca TSS`,
-      timestamp: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
-      location: '04.21°N, 99.85°E (International Shipping Lane)',
-      icon: MapPin,
-      color: '#0284c7',
-      badge: 'Waypoint Verified',
-      performedBy: 'Automated AIS & Bridge Officer',
-      userRole: 'Ship Manager',
-      auditId: 'AUD-WP-01',
-      hash: 'f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6',
-      cargoState: 'Reefer Telemetry Constant (-18.0°C) / Zero Discrepancies',
-      details: `Vessel logged passage past Malacca TSS corridor at speed 19.5 knots. Heading: 295°. Sea state: Moderate swell (1.2m).`
-    });
-
-    // 7. En-route Exception / Weather Swell
-    events.push({
-      id: 'EVT-DLY-WEATHER',
-      category: 'EXCEPTION',
-      stage: 'En-route Exception',
-      stepNumber: 7,
-      timeLabel: '1 Day Ago',
-      statusAtTime: 'In Transit (Speed Adjusted for Heavy Swell)',
-      speedAtTime: '16.2 kts (Throttle Reduced)',
-      locationAtTime: 'Arabian Sea Corridor (10.45°N, 85.12°E)',
-      coordinatesAtTime: { lat: 10.45, lng: 85.12 },
-      title: `Monsoon Swell Exception Logged: +3.5 Hours`,
-      timestamp: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString(),
-      location: 'Arabian Sea Corridor (Deep Sea Passage)',
-      icon: AlertTriangle,
-      color: '#b45309',
-      badge: 'Delay Recorded',
-      performedBy: activeShip.captain,
-      userRole: 'Ship Manager',
-      auditId: 'AUD-DLY-01',
-      hash: 'd4c3b2a1f0e9d8c7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3',
-      cargoState: 'Lashing Check Completed / Container Stacks Secure',
-      details: `Reason: "Heavy monsoon swell encountered". Mitigation: "Master reduced throttle to 16.2 knots to maintain lashing stability. Destination port terminal updated."`
-    });
-
-    // 8. Live Current Telemetry Milestone
-    events.push({
-      id: 'EVT-LIVE-POS',
-      category: 'NAVIGATION',
-      stage: 'Live Satellite AIS Fix',
-      stepNumber: 8,
-      timeLabel: 'LIVE NOW (Realtime)',
-      statusAtTime: `In Transit (Cruising at ${activeShip.coordinates?.speedKnots || 19.8} kts)`,
-      speedAtTime: `${activeShip.coordinates?.speedKnots || 19.8} kts (Heading ${activeShip.coordinates?.heading || 312}°)`,
-      locationAtTime: `${activeShip.currentLocation || 'Arabian Sea Passage'}`,
-      coordinatesAtTime: { lat: activeShip.coordinates?.lat || 14.82, lng: activeShip.coordinates?.lng || 74.15 },
-      title: `Live AIS Fix: ${activeShip.coordinates?.lat?.toFixed(2) || 14.82}°N, ${activeShip.coordinates?.lng?.toFixed(2) || 74.15}°E`,
-      timestamp: new Date().toISOString(),
-      location: `${activeShip.currentLocation} (${activeShip.coordinates?.speedKnots || 19.8} kts, ${activeShip.coordinates?.heading || 312}°)`,
-      icon: Radio,
-      color: '#0284c7',
-      badge: 'Live Telemetry Stream',
-      performedBy: 'AIS Satellite Transponder',
-      userRole: 'Automated Sensor Link',
-      auditId: 'AUD-LIVE-AIS-2026',
-      hash: '3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f',
-      cargoState: 'All Containers Stable & Monitored in Cryptographic Ledger',
-      details: `Continuous satellite AIS fix received. Cruising speed: ${activeShip.coordinates?.speedKnots || 19.8} knots. Distance to destination ${activeShip.arrivalPort || 'Mumbai Port'}: approx 240 nautical miles. ETA: ${new Date(currentVoyage?.estimatedArrivalTime || Date.now() + 2 * 24 * 3600 * 1000).toLocaleString()}.`
-    });
-
-    // 9. Upcoming Milestone: Destination Berth
-    events.push({
-      id: 'EVT-UPCOMING-DEST',
-      category: 'UPCOMING',
-      stage: 'Upcoming Arrival & Discharge',
-      stepNumber: 9,
-      timeLabel: 'In ~2 Days (ETA)',
-      statusAtTime: `Scheduled Arrival at ${activeShip.arrivalPort || 'Mumbai Port'}`,
-      speedAtTime: 'Approaching Pilot Station (0.0 kts at Berth)',
-      locationAtTime: `${activeShip.arrivalPort || 'Mumbai Port'} - Quay Berth #01`,
-      coordinatesAtTime: { lat: 18.95, lng: 72.84 },
-      title: `Scheduled Pilot Station Boarding & Discharge at ${activeShip.arrivalPort || 'Mumbai Port'}`,
-      timestamp: new Date(currentVoyage?.estimatedArrivalTime || Date.now() + 2 * 24 * 3600 * 1000).toISOString(),
-      location: `${activeShip.arrivalPort || 'Mumbai Port'} - ${currentVoyage?.portCoordination?.requestedBerth || 'Berth 01'}`,
-      icon: Anchor,
-      color: '#64748b',
-      badge: 'Scheduled ETA',
-      performedBy: 'Port Master & Ship Manager',
-      userRole: 'Port Manager',
-      auditId: 'AUD-SCHED-BERTH',
-      hash: 'Pending Execution upon All-Fast Docking',
-      cargoState: 'Stevedore Gangs & Automated Gantry Cranes Reserved',
-      details: `Scheduled outer anchorage pilot station arrival. Quay cranes and stevedore gangs scheduled for container discharge upon all-fast clearance.`
-    });
-
-    return events;
+    return events
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+      .map((event, index) => ({ ...event, stepNumber: index + 1 }));
   };
 
   const allEvents = buildTimelineEvents();
 
-  // Set default selected index to the active live position (index 7) if not set
   useEffect(() => {
-    if (allEvents.length > 0 && selectedEventIndex === 0) {
-      const liveIdx = allEvents.findIndex(e => e.id === 'EVT-LIVE-POS');
-      if (liveIdx !== -1) setSelectedEventIndex(liveIdx);
-    }
+    setSelectedEventIndex(index => Math.min(index, Math.max(allEvents.length - 1, 0)));
   }, [allEvents.length]);
 
   // Autoplay handler
@@ -374,12 +318,12 @@ export const ShipTimelinePage = ({ initialShipId, onNavigate }) => {
     };
   }, [isPlaying, allEvents.length]);
 
-  const activeEvent = allEvents[selectedEventIndex] || allEvents[0];
+  const activeEvent = allEvents[selectedEventIndex] || allEvents[0] || null;
 
   // Filter events for the vertical list
   const filteredEvents = allEvents.filter(evt => {
     if (selectedStageFilter !== 'ALL') {
-      if (selectedStageFilter === 'PORT' && evt.category !== 'PORT_OPS' && evt.category !== 'REGISTRATION') return false;
+      if (selectedStageFilter === 'PORT' && evt.category !== 'PORT_OPS' && evt.category !== 'SHIP') return false;
       if (selectedStageFilter === 'CARGO' && evt.category !== 'CARGO') return false;
       if (selectedStageFilter === 'VOYAGE' && evt.category !== 'VOYAGE' && evt.category !== 'NAVIGATION') return false;
       if (selectedStageFilter === 'EXCEPTION' && evt.category !== 'EXCEPTION') return false;
@@ -389,10 +333,69 @@ export const ShipTimelinePage = ({ initialShipId, onNavigate }) => {
       return evt.title.toLowerCase().includes(q) ||
         evt.details.toLowerCase().includes(q) ||
         evt.location.toLowerCase().includes(q) ||
-        evt.auditId.toLowerCase().includes(q);
+        String(evt.auditId || '').toLowerCase().includes(q);
     }
     return true;
   });
+
+  if (loading) {
+    return <div className="page-wrapper" style={{ padding: '40px', color: '#64748b' }}>Loading ship timeline...</div>;
+  }
+
+  if (timelineError) {
+    return (
+      <div className="page-wrapper">
+        <div role="alert" className="maritime-card" style={{ padding: '24px', color: '#991b1b' }}>
+          <div>Unable to load ship timeline: {timelineError}</div>
+          <button onClick={loadShipTimelineData} className="btn btn-secondary" style={{ marginTop: '12px' }}>
+            <RotateCw size={15} /> Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeShip) {
+    return (
+      <div className="page-wrapper">
+        <div className="maritime-card" style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>
+          <Ship size={28} style={{ marginBottom: '8px' }} />
+          <h2 style={{ margin: '0 0 6px', color: '#0f172a', fontSize: '18px' }}>No ship records</h2>
+          <div>No ship timeline is available until a ship is added.</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeEvent) {
+    return (
+      <div className="page-wrapper" style={{ maxWidth: '1440px', margin: '0 auto' }}>
+        <div className="maritime-card" style={{ padding: '22px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+          <div>
+            <div style={{ color: '#0284c7', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>Ship Timeline</div>
+            <h1 style={{ margin: '4px 0', color: '#0f172a', fontSize: '22px' }}>{activeShip.name}</h1>
+            <div style={{ color: '#64748b', fontSize: '13px' }}>{activeShip.shipId} · {activeShip.status}</div>
+          </div>
+          <select
+            className="select-control"
+            value={activeShip.shipId}
+            onChange={event => {
+              setSelectedShipId(event.target.value);
+              setSelectedEventIndex(0);
+            }}
+            aria-label="Select vessel"
+          >
+            {ships.map(ship => <option key={ship.shipId} value={ship.shipId}>{ship.name} ({ship.shipId})</option>)}
+          </select>
+        </div>
+        <div className="maritime-card" style={{ padding: '40px 24px', textAlign: 'center', color: '#64748b' }}>
+          <Clock size={28} style={{ marginBottom: '8px' }} />
+          <h2 style={{ margin: '0 0 6px', color: '#0f172a', fontSize: '18px' }}>No timeline events recorded</h2>
+          <div>Voyages, port activity, container milestones, or audit events linked to this ship will appear here.</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrapper" style={{ maxWidth: '1440px', margin: '0 auto', paddingBottom: '60px' }}>
@@ -565,7 +568,7 @@ export const ShipTimelinePage = ({ initialShipId, onNavigate }) => {
             position: 'absolute',
             top: '38px',
             left: '30px',
-            width: `${(selectedEventIndex / (allEvents.length - 1)) * 100}%`,
+            width: `${(selectedEventIndex / Math.max(allEvents.length - 1, 1)) * 100}%`,
             maxWidth: 'calc(100% - 60px)',
             height: '4px',
             background: 'linear-gradient(90deg, #38bdf8 0%, #10b981 100%)',
@@ -671,9 +674,9 @@ export const ShipTimelinePage = ({ initialShipId, onNavigate }) => {
             }}
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#94a3b8', marginTop: '4px' }}>
-            <span>🏁 Commissioning ({allEvents[0]?.timeLabel})</span>
-            <span>📍 Live Position</span>
-            <span>🏁 Destination Arrival ({allEvents[allEvents.length - 1]?.timeLabel})</span>
+            <span>First recorded event: {allEvents[0]?.timeLabel}</span>
+            <span>{activeEvent.timeLabel}</span>
+            <span>Latest recorded event: {allEvents[allEvents.length - 1]?.timeLabel}</span>
           </div>
         </div>
 
@@ -730,7 +733,7 @@ export const ShipTimelinePage = ({ initialShipId, onNavigate }) => {
                 <span>{new Date(activeEvent.timestamp).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} {new Date(activeEvent.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
               <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
-                Relative: <strong>{activeEvent.timeLabel}</strong>
+                Recorded: <strong>{activeEvent.timeLabel}</strong>
               </div>
             </div>
           </div>
@@ -818,21 +821,23 @@ export const ShipTimelinePage = ({ initialShipId, onNavigate }) => {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontFamily: 'monospace', color: '#64748b' }}>
-                Hash: {activeEvent.hash.substring(0, 24)}...
+                Hash: {activeEvent.hash ? `${activeEvent.hash.substring(0, 24)}...` : 'Not recorded'}
               </span>
-              <span style={{
-                background: 'rgba(16, 185, 129, 0.2)',
-                color: '#34d399',
-                padding: '2px 8px',
-                borderRadius: '4px',
-                fontSize: '10px',
-                fontWeight: 800,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                <ShieldCheck size={12} /> CRYPTOGRAPHICALLY SEALED
-              </span>
+              {activeEvent.hash && (
+                <span style={{
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  color: '#34d399',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <ShieldCheck size={12} /> HASH RECORDED
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -1065,7 +1070,7 @@ export const ShipTimelinePage = ({ initialShipId, onNavigate }) => {
                           alignItems: 'center',
                           gap: '3px'
                         }}>
-                          <ShieldCheck size={11} /> SHA-256 SEALED
+                          {evt.hash ? <><ShieldCheck size={11} /> HASH RECORDED</> : 'No linked hash'}
                         </span>
                       </div>
                     </div>

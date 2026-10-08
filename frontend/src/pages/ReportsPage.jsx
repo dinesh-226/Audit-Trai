@@ -17,6 +17,7 @@ export const ReportsPage = () => {
   const { user } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [generating, setGenerating] = useState(false);
   const [reportTitle, setReportTitle] = useState('Comprehensive Maritime Audit Trail Certificate');
   const [reportType, setReportType] = useState('Comprehensive Audit Trail');
@@ -30,8 +31,11 @@ export const ReportsPage = () => {
     try {
       const data = await api.reports.getAll();
       setReports(data || []);
+      setLoadError('');
     } catch (e) {
       console.error(e);
+      setReports([]);
+      setLoadError(e.message || 'Failed to load reports.');
     } finally {
       setLoading(false);
     }
@@ -142,6 +146,10 @@ export const ReportsPage = () => {
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
             Loading reports...
           </div>
+        ) : loadError ? (
+          <div role="alert" style={{ textAlign: 'center', padding: '40px', color: '#991b1b' }}>
+            Unable to load reports: {loadError}
+          </div>
         ) : reports.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
             No formal reports generated yet. Use the form above to compile a certificate.
@@ -167,8 +175,14 @@ export const ReportsPage = () => {
                     <span style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--cyan)', fontWeight: 700 }}>
                       {rpt.reportId}
                     </span>
-                    <span className="badge badge-green">
-                      {rpt.integrityStatus || 'VERIFIED'}
+                    <span
+                      className="badge"
+                      style={{
+                        background: rpt.integrityStatus === 'VERIFIED' ? '#dcfce7' : '#fef3c7',
+                        color: rpt.integrityStatus === 'VERIFIED' ? '#166534' : '#92400e'
+                      }}
+                    >
+                      {rpt.integrityStatus || 'NOT CHECKED'}
                     </span>
                   </div>
 
@@ -195,7 +209,11 @@ export const ReportsPage = () => {
                     </div>
                     <div>
                       <span style={{ color: 'var(--text-muted)' }}>Security Check:</span>
-                      <div style={{ fontWeight: 700, color: '#10b981' }}>100% SHA-256</div>
+                      <div style={{ fontWeight: 700, color: rpt.metricsSummary?.integrityVerified ? '#10b981' : '#92400e' }}>
+                        {rpt.metricsSummary?.totalAudits > 0
+                          ? rpt.metricsSummary.integrityVerified ? 'Chain verified' : 'Not verified'
+                          : 'No audit events'}
+                      </div>
                     </div>
                   </div>
                 </div>

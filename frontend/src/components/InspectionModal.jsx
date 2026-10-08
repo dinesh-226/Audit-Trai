@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { X, ClipboardCheck, ShieldCheck, Check, AlertCircle } from 'lucide-react';
 
 export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
+  const { user } = useAuth();
   const [containersList, setContainersList] = useState([]);
+  const [containersLoading, setContainersLoading] = useState(true);
+  const [containersError, setContainersError] = useState('');
   const [formData, setFormData] = useState({
     containerId: containerId || '',
     shipId: shipId || '',
-    port: 'Mumbai Port (JNPT)',
+    port: user?.assignedPort || '',
     inspectionType: 'Safety & Structural',
-    result: 'Passed',
-    notes: 'Physical ISO 17712 bolt seal intact. No structural deformations on corner castings.',
-    sealIntact: true,
+    result: '',
+    notes: '',
+    sealIntact: false,
     temperatureRecorded: ''
   });
 
   const [checklist, setChecklist] = useState([
-    { item: 'Physical ISO 17712 Bolt Seal Intact & Verified', passed: true, comments: 'High-security bolt seal matched digital manifest' },
-    { item: 'Corner Castings & Structural Integrity', passed: true, comments: 'Solid condition, no cracks or twists on 8 corners' },
-    { item: 'CSC Safety Plate Legible & Valid', passed: true, comments: 'Tare & Max Gross Weight certified' },
-    { item: 'Weather-tight Door Gaskets & Locking Bars', passed: true, comments: 'No light or moisture infiltration' }
+    { item: 'Physical seal verified', passed: false, comments: '' },
+    { item: 'Corner castings and structural integrity checked', passed: false, comments: '' },
+    { item: 'CSC safety plate checked', passed: false, comments: '' },
+    { item: 'Door gaskets and locking bars checked', passed: false, comments: '' }
   ]);
 
   const [loading, setLoading] = useState(false);
@@ -38,6 +42,9 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
       }
     } catch (e) {
       console.error(e);
+      setContainersError(e.message || 'Unable to load containers.');
+    } finally {
+      setContainersLoading(false);
     }
   };
 
@@ -51,6 +58,14 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!containersList.some(container => container.containerId === formData.containerId)) {
+      setError('Select an existing container before submitting an inspection.');
+      return;
+    }
+    if (!formData.result) {
+      setError('Select an inspection result before submitting.');
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -58,6 +73,7 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
       const payload = {
         ...formData,
         containerId: formData.containerId.toUpperCase(),
+        sealIntact: checklist[0]?.passed || false,
         temperatureRecorded: formData.temperatureRecorded !== '' ? Number(formData.temperatureRecorded) : null,
         checklist
       };
@@ -115,13 +131,14 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
                 Container Identifier *
               </label>
-              {containersList.length > 0 ? (
+              {!containersLoading && containersList.length > 0 ? (
                 <select
                   className="input-control"
                   value={formData.containerId}
                   onChange={(e) => setFormData({ ...formData, containerId: e.target.value })}
                   required
                 >
+                  <option value="">Select a container</option>
                   {containersList.map(c => (
                     <option key={c.containerId} value={c.containerId}>
                       {c.containerId} ({c.type} - {c.ownerCompany})
@@ -129,14 +146,9 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
                   ))}
                 </select>
               ) : (
-                <input
-                  type="text"
-                  required
-                  className="input-control"
-                  value={formData.containerId}
-                  onChange={(e) => setFormData({ ...formData, containerId: e.target.value })}
-                  placeholder="e.g. ONEU-8821094 or MSCU-7492014"
-                />
+                <div role={containersError ? 'alert' : 'status'} style={{ fontSize: '12px', color: containersError ? '#b91c1c' : 'var(--text-muted)' }}>
+                  {containersLoading ? 'Loading containers...' : containersError || 'No containers are registered. Add a container before starting an inspection.'}
+                </div>
               )}
             </div>
             <div>
@@ -165,9 +177,12 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
               >
                 <option value="Safety & Structural">Safety & Structural</option>
                 <option value="Customs & Border Control">Customs & Border Control</option>
+                <option value="Reefer Temp & Integrity">Reefer Temp & Integrity</option>
+                <option value="Dangerous Goods Compliance">Dangerous Goods Compliance</option>
+                <option value="Seal Verification">Seal Verification</option>
                 <option value="Cold Chain & Phytosanitary">Cold Chain & Phytosanitary</option>
-                <option value="Dangerous Goods / Hazmat">Dangerous Goods / Hazmat</option>
                 <option value="Radiation & Security Screening">Radiation & Security Screening</option>
+                <option value="Post-Voyage Inbound Inspection">Post-Voyage Inbound Inspection</option>
               </select>
             </div>
             <div>
@@ -178,10 +193,15 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
                 className="input-control"
                 value={formData.result}
                 onChange={(e) => setFormData({ ...formData, result: e.target.value })}
+                required
               >
+                <option value="" disabled>Select a result</option>
                 <option value="Passed">Passed (Clear for Transit / Gate Out)</option>
                 <option value="Failed">Failed (Hold Cargo & Flag Anomaly)</option>
-                <option value="Conditional Pass">Conditional Pass (Pending Document Signoff)</option>
+                <option value="Requires Re-inspection">Requires Re-inspection</option>
+                <option value="Flagged for Quarantine">Flagged for Quarantine</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Repair Required">Repair Required</option>
               </select>
             </div>
           </div>
@@ -246,7 +266,7 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
             <button type="button" onClick={onClose} className="btn btn-secondary">
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="btn btn-primary">
+            <button type="submit" disabled={loading || containersLoading || containersList.length === 0 || !formData.containerId || !formData.result} className="btn btn-primary">
               <ShieldCheck size={16} />
               <span>{loading ? 'Submitting & Hashing...' : 'Sign & Submit Inspection'}</span>
             </button>

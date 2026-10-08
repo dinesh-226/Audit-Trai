@@ -1,6 +1,9 @@
 // middleware/auth.js - Authentication & Role Authorization Middleware
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_audit_trail_key_2026';
+
 const protect = async (req, res, next) => {
   let token;
 
@@ -18,8 +21,10 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_audit_trail_key_2026');
-    const user = await User.findById(decoded.id);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = decoded.userId
+      ? await User.findOne({ userId: decoded.userId })
+      : await User.findById(decoded.id);
 
     if (!user) {
       return res.status(401).json({
@@ -72,11 +77,11 @@ const requireVerified = (req, res, next) => {
 };
 
 module.exports = {
+  JWT_SECRET,
+  requireAuth: protect,
+  authMiddleware: protect,
+  requireRole: authorize,
   protect,
   authorize,
-  requireVerified,
-
-  requireAuth: protect,
-  requireRole: authorize,
-  authMiddleware: protect
+  requireVerified
 };

@@ -20,8 +20,8 @@ router.get('/', async (req, res) => {
 
     let voyages = await Voyage.find(query).sort({ updatedAt: -1 });
 
-    // If no voyages exist yet in DB, create initial demo voyages
-    if (voyages.length === 0) {
+    // Populate sample voyages only when demo seeding is explicitly enabled.
+    if (voyages.length === 0 && process.env.ENABLE_DEMO_SEEDING === 'true') {
       const ships = await Ship.find();
       const demoVoyages = [
         {
@@ -278,7 +278,9 @@ router.patch('/:voyageId/telemetry', requireAuth, requireRole('admin', 'ship_man
 
     if (speedKnots !== undefined) voyage.speedKnots = Number(speedKnots);
     if (headingDegrees !== undefined) voyage.headingDegrees = Number(headingDegrees);
-    if (coordinates) voyage.currentCoordinates = coordinates;
+    if (coordinates && Number.isFinite(Number(coordinates.lat)) && Number.isFinite(Number(coordinates.lng))) {
+      voyage.currentCoordinates = { lat: Number(coordinates.lat), lng: Number(coordinates.lng) };
+    }
     if (seaConditions) voyage.seaConditions = seaConditions;
 
     if (waypointIndex !== undefined && voyage.waypoints[waypointIndex]) {
@@ -288,16 +290,16 @@ router.patch('/:voyageId/telemetry', requireAuth, requireRole('admin', 'ship_man
 
     await voyage.save();
 
-    // Update ship model coordinates
-    if (coordinates || speedKnots || headingDegrees) {
-      await Ship.findOneAndUpdate({ shipId: voyage.shipId }, {
-        coordinates: {
-          lat: coordinates?.lat || voyage.currentCoordinates.lat,
-          lng: coordinates?.lng || voyage.currentCoordinates.lng,
-          speedKnots: voyage.speedKnots,
-          heading: voyage.headingDegrees
-        }
-      });
+    const shipTelemetry = {};
+    if (coordinates && voyage.currentCoordinates) {
+      shipTelemetry['coordinates.lat'] = voyage.currentCoordinates.lat;
+      shipTelemetry['coordinates.lng'] = voyage.currentCoordinates.lng;
+      shipTelemetry['coordinates.lastUpdated'] = new Date();
+    }
+    if (speedKnots !== undefined) shipTelemetry['coordinates.speedKnots'] = voyage.speedKnots;
+    if (headingDegrees !== undefined) shipTelemetry['coordinates.heading'] = voyage.headingDegrees;
+    if (Object.keys(shipTelemetry).length > 0) {
+      await Ship.findOneAndUpdate({ shipId: voyage.shipId }, { $set: shipTelemetry });
     }
 
     res.json({ message: 'Live voyage telemetry updated', voyage });

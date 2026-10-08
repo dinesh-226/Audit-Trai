@@ -154,13 +154,15 @@ const seedInitialReeferData = async () => {
   await ReeferTemperature.insertMany(sampleReefers);
 };
 
-// Initialize seed data on boot
-seedInitialReeferData().catch(err => console.error('Reefer seeding error:', err));
+// Initialize demo records only when demo seeding is explicitly enabled.
+if (process.env.ENABLE_DEMO_SEEDING === 'true') {
+  seedInitialReeferData().catch(err => console.error('Reefer seeding error:', err));
+}
 
 // 1. Overview Summary & Charts
 router.get('/overview', requireAuth, async (req, res) => {
   try {
-    await seedInitialReeferData();
+    if (process.env.ENABLE_DEMO_SEEDING === 'true') await seedInitialReeferData();
     const { port, shipId } = req.query;
     const query = {};
     if (port && port !== 'ALL') query.port = new RegExp(port, 'i');
@@ -232,7 +234,7 @@ router.get('/overview', requireAuth, async (req, res) => {
 // 2. List All Reefer Containers with Filters
 router.get('/containers', requireAuth, async (req, res) => {
   try {
-    await seedInitialReeferData();
+    if (process.env.ENABLE_DEMO_SEEDING === 'true') await seedInitialReeferData();
     const { port, shipId, status, cargoType, search } = req.query;
     const query = {};
 

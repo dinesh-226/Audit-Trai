@@ -35,173 +35,6 @@ import {
 } from 'lucide-react';
 import { TemperatureMonitoringPage } from './TemperatureMonitoringPage';
 
-// Default Fallback Datasets (ensures instant rendering with zero blank screens)
-const DEFAULT_SUMMARY = {
-  totalContainers: { title: 'Total Containers', value: 24, trend: '+8.4%', status: 'neutral', icon: 'Box', route: 'containers' },
-  containersInPort: { title: 'Containers in Port', value: 16, trend: '+4.1%', status: 'info', icon: 'Layers', route: 'containers' },
-  containersLoaded: { title: 'Containers Loaded', value: 18, trend: '+12.5%', status: 'success', icon: 'Ship', route: 'containers' },
-  containersUnloaded: { title: 'Containers Unloaded', value: 6, trend: '+3.2%', status: 'success', icon: 'CheckCircle', route: 'containers' },
-  containersOnHold: { title: 'Containers on Hold', value: 2, trend: '-2.0%', status: 'warning', icon: 'AlertTriangle', route: 'containers' },
-
-  totalShips: { title: 'Total Fleet Ships', value: 6, trend: '0%', status: 'neutral', icon: 'Ship', route: 'ships' },
-  shipsInPort: { title: 'Ships in Port', value: 3, trend: '+1', status: 'info', icon: 'Anchor', route: 'ships' },
-  activeVoyages: { title: 'Active Voyages', value: 4, trend: '+2', status: 'info', icon: 'Navigation', route: 'voyages' },
-  delayedVoyages: { title: 'Delayed Voyages', value: 1, trend: '+1', status: 'warning', icon: 'Clock', route: 'voyages' },
-
-  pendingInspections: { title: 'Pending Inspections', value: 3, trend: '-15%', status: 'info', icon: 'Clock', route: 'inspections' },
-  passedInspections: { title: 'Passed Inspections', value: 42, trend: '+94%', status: 'success', icon: 'CheckCircle2', route: 'inspections' },
-  failedInspections: { title: 'Failed Inspections', value: 3, trend: '-5%', status: 'danger', icon: 'XCircle', route: 'inspections' },
-
-  totalAuditEvents: { title: 'Total Audit Events', value: 158, trend: '+18.2%', status: 'neutral', icon: 'ShieldCheck', route: 'audit' },
-  failedLogins: { title: 'Failed Login Events', value: 0, trend: '0%', status: 'success', icon: 'Lock', route: 'audit' },
-  auditIntegrity: { title: 'Audit Integrity', value: '100% Intact', trend: 'Verified', status: 'success', icon: 'Shield', route: 'audit' }
-};
-
-const DEFAULT_PORT_CHARTS = {
-  containerMovementStatus: {
-    labels: ['Gate In', 'Yard Stored', 'Quay Loading', 'In Transit', 'Unloading / Arrived', 'Delivered', 'On Hold'],
-    datasets: [{
-      data: [4, 8, 6, 12, 5, 8, 2],
-      backgroundColor: ['#0f3460', '#0284c7', '#0369a1', '#0ea5e9', '#38bdf8', '#10b981', '#ef4444']
-    }]
-  },
-  dailyGateEntryExit: {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [
-      { label: 'Gate In (Entry)', data: [18, 24, 28, 22, 30, 16, 20], backgroundColor: '#0f3460' },
-      { label: 'Gate Out (Exit)', data: [14, 20, 25, 19, 27, 12, 18], backgroundColor: '#0284c7' }
-    ]
-  },
-  loadingUnloadingTrends: {
-    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
-    datasets: [
-      { label: 'Crane Loading (TEU/hr)', data: [4, 8, 24, 32, 28, 16], borderColor: '#0f3460', backgroundColor: 'rgba(15, 52, 96, 0.1)', fill: true },
-      { label: 'Quay Unloading (TEU/hr)', data: [6, 12, 28, 30, 24, 18], borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.1)', fill: true }
-    ]
-  },
-  yardOccupancy: {
-    labels: ['Yard Block A (Dry)', 'Yard Block B (Reefer)', 'Yard Block C (Hazmat)', 'Yard Block D (Empty)'],
-    datasets: [{ label: 'Occupied Capacity (%)', data: [78, 62, 45, 30], backgroundColor: ['#0f3460', '#0284c7', '#0369a1', '#0ea5e9'] }]
-  },
-  berthOccupancy: {
-    labels: ['Berth B-01 (Quay 1)', 'Berth B-02 (Quay 2)', 'Berth B-03 (Deepwater)', 'Berth B-04 (Feeder)'],
-    datasets: [{ label: 'Berth Utilization (%)', data: [85, 92, 60, 40], backgroundColor: ['#0f3460', '#0284c7', '#0369a1', '#64748b'] }]
-  },
-  portActivityByType: {
-    labels: ['Gate Operations', 'Yard Stacking', 'Berth Operations', 'Crane Loading', 'Quay Unloading', 'Safety Holds'],
-    datasets: [{ label: 'Logged Operations', data: [28, 19, 14, 22, 16, 4], backgroundColor: '#0f3460' }]
-  },
-  operationalDelays: {
-    labels: ['Customs Hold', 'Weather / Monsoons', 'Berth Congestion', 'Crane Maintenance', 'Seal Discrepancy'],
-    datasets: [{ label: 'Delay Events', data: [5, 3, 4, 2, 2], backgroundColor: ['#ef4444', '#f59e0b', '#0284c7', '#64748b', '#dc2626'] }]
-  },
-  containerProcessingTime: {
-    labels: ['Gate In ➔ Yard', 'Yard ➔ Inspection', 'Inspection ➔ Crane', 'Unload ➔ Gate Out'],
-    datasets: [{ label: 'Average Hours', data: [1.8, 2.4, 3.2, 4.1], backgroundColor: '#0284c7' }]
-  }
-};
-
-const DEFAULT_SHIP_CHARTS = {
-  shipStatusDistribution: {
-    labels: ['Sailing / In Transit', 'In Port / Berthed', 'Under Maintenance', 'Scheduled'],
-    datasets: [{ data: [3, 2, 1, 1], backgroundColor: ['#0284c7', '#0f3460', '#f59e0b', '#64748b'] }]
-  },
-  activeVoyagesChart: {
-    labels: ['MSC Irina (Singapore)', 'Ever Given (Rotterdam)', 'Maersk Mc-Kinney (Jebel Ali)', 'CMA CGM (Mumbai)'],
-    datasets: [{ label: 'Voyage Progress (%)', data: [85, 65, 90, 40], backgroundColor: '#0f3460' }]
-  },
-  arrivalComparison: {
-    labels: ['Voyage V-101', 'Voyage V-102', 'Voyage V-103', 'Voyage V-104'],
-    datasets: [
-      { label: 'Estimated Days', data: [6.0, 8.5, 4.0, 10.0], backgroundColor: '#0f3460' },
-      { label: 'Actual Days', data: [6.2, 8.9, 4.0, 11.2], backgroundColor: '#0284c7' }
-    ]
-  },
-  voyageDelays: {
-    labels: ['Mumbai ➔ Singapore', 'Jebel Ali ➔ Mumbai', 'Shanghai ➔ Mumbai', 'Rotterdam ➔ Singapore'],
-    datasets: [{ label: 'Delay Duration (Hours)', data: [4, 8, 2, 12], backgroundColor: ['#0284c7', '#f59e0b', '#10b981', '#ef4444'] }]
-  },
-  shipSpeedTrend: {
-    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
-    datasets: [{ label: 'Speed (Knots)', data: [18.2, 19.5, 19.8, 18.9, 20.1, 19.4], borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.1)', fill: true }]
-  },
-  containersByShip: {
-    labels: ['MSC Irina', 'Ever Given', 'Maersk Mc-Kinney', 'CMA CGM Jacques'],
-    datasets: [
-      { label: 'Loaded Onboard (TEU)', data: [1420, 1850, 1200, 950], backgroundColor: '#0f3460' },
-      { label: 'Pending Loading (TEU)', data: [240, 180, 310, 150], backgroundColor: '#0284c7' }
-    ]
-  }
-};
-
-const DEFAULT_INSPECTOR_CHARTS = {
-  inspectionResultDistribution: {
-    labels: ['Passed', 'Failed', 'On Hold', 'Repair Required', 'Re-inspection Required', 'In Progress'],
-    datasets: [{ data: [42, 3, 2, 2, 1, 3], backgroundColor: ['#16a34a', '#dc2626', '#ef4444', '#f59e0b', '#0284c7', '#64748b'] }]
-  },
-  inspectionsOverTime: {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [{ label: 'Inspections Completed', data: [12, 18, 22, 19, 25, 14, 18], borderColor: '#0f3460', backgroundColor: 'rgba(15, 52, 96, 0.1)', fill: true }]
-  },
-  passFailTrends: {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-    datasets: [
-      { label: 'Passed Inspections', data: [42, 48, 52, 50], backgroundColor: '#16a34a' },
-      { label: 'Failed / Held', data: [3, 2, 4, 1], backgroundColor: '#dc2626' }
-    ]
-  },
-  commonInspectionFailures: {
-    labels: ['Damaged Bolt Seal', 'Wall Panel Dent', 'IMDG Label Error', 'Reefer Temp Deviation', 'Corner Casting Crack'],
-    datasets: [{ label: 'Failure Incidents', data: [6, 4, 3, 2, 2], backgroundColor: ['#dc2626', '#ef4444', '#f59e0b', '#0284c7', '#0f3460'] }]
-  },
-  inspectorWorkload: {
-    labels: ['Officer S. Patil', 'Officer R. Sharma', 'Officer A. Kadam', 'Officer D. Verma'],
-    datasets: [
-      { label: 'Completed', data: [28, 22, 19, 15], backgroundColor: '#0f3460' },
-      { label: 'Pending Queue', data: [4, 3, 5, 2], backgroundColor: '#0284c7' }
-    ]
-  },
-  inspectionCompletionTime: {
-    labels: ['Safety & Structural', 'Reefer Integrity', 'Dangerous Goods IMDG', 'Customs Seal Match'],
-    datasets: [{ label: 'Avg Minutes', data: [14.5, 18.2, 22.0, 8.5], backgroundColor: '#0284c7' }]
-  }
-};
-
-const DEFAULT_ADMIN_CHARTS = {
-  userDistribution: {
-    labels: ['Admin', 'Port Manager', 'Ship Manager', 'Inspector', 'Viewer'],
-    datasets: [{ data: [1, 2, 2, 3, 4], backgroundColor: ['#0f3460', '#0284c7', '#0369a1', '#0ea5e9', '#38bdf8'] }]
-  },
-  userActivityOverTime: {
-    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
-    datasets: [{ label: 'System Actions', data: [14, 22, 18, 30, 26, 19, 28], borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.1)', fill: true }]
-  },
-  auditEventsByAction: {
-    labels: ['CONTAINER_CREATE', 'STATUS_UPDATE', 'INSPECTION_SUBMIT', 'PORT_ACTIVITY', 'VERIFY_AUDIT', 'REPORT_EXPORT'],
-    datasets: [{ label: 'Action Frequency', data: [24, 32, 18, 25, 12, 15], backgroundColor: '#0f3460' }]
-  },
-  auditEventsByRole: {
-    labels: ['Admin', 'Port Manager', 'Ship Manager', 'Inspector', 'Viewer'],
-    datasets: [{ label: 'Events by Role', data: [35, 48, 32, 28, 15], backgroundColor: ['#0f3460', '#0284c7', '#0369a1', '#0ea5e9', '#38bdf8'] }]
-  },
-  auditIntegrityStatus: {
-    labels: ['Verified Intact Blocks', 'Suspicious / Flagged', 'Pending Review'],
-    datasets: [{ data: [158, 0, 0], backgroundColor: ['#16a34a', '#dc2626', '#f59e0b'] }]
-  },
-  securityEventsOverTime: {
-    labels: ['Normal Logins', 'Failed Attempts', 'High Risk Alerts', 'Quarantine Flags'],
-    datasets: [{ label: 'Count', data: [158, 0, 3, 2], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }]
-  },
-  recordChangesOverTime: {
-    labels: ['Containers', 'Ships', 'Voyages', 'Inspections', 'Port Operations'],
-    datasets: [{ label: 'Active Records', data: [24, 6, 8, 45, 120], backgroundColor: ['#0f3460', '#0284c7', '#0369a1', '#0ea5e9', '#64748b'] }]
-  },
-  topActiveUsers: {
-    labels: ['Capt. Rajesh Menon', 'Vikram Malhotra', 'Sameer Patil', 'Ananya Deshmukh'],
-    datasets: [{ label: 'Verified Actions', data: [52, 44, 38, 24], backgroundColor: '#0284c7' }]
-  }
-};
-
 export const AnalyticsPage = ({ onNavigate, initialTab }) => {
   const { user, hasRole } = useAuth();
 
@@ -214,13 +47,15 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
   const [selectedShip, setSelectedShip] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Data State with resilient fallbacks
-  const [summaryData, setSummaryData] = useState(DEFAULT_SUMMARY);
-  const [adminCharts, setAdminCharts] = useState(DEFAULT_ADMIN_CHARTS);
-  const [portCharts, setPortCharts] = useState(DEFAULT_PORT_CHARTS);
-  const [shipCharts, setShipCharts] = useState(DEFAULT_SHIP_CHARTS);
-  const [inspectorCharts, setInspectorCharts] = useState(DEFAULT_INSPECTOR_CHARTS);
-  const [loading, setLoading] = useState(false);
+  const [summaryData, setSummaryData] = useState(null);
+  const [adminCharts, setAdminCharts] = useState(null);
+  const [portCharts, setPortCharts] = useState(null);
+  const [shipCharts, setShipCharts] = useState(null);
+  const [inspectorCharts, setInspectorCharts] = useState(null);
+  const [availablePorts, setAvailablePorts] = useState([]);
+  const [availableShips, setAvailableShips] = useState([]);
+  const [analyticsError, setAnalyticsError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // Drilldown Modal State
   const [drilldownConfig, setDrilldownConfig] = useState({
@@ -240,49 +75,46 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
 
   const loadAnalytics = async () => {
     setLoading(true);
-    try {
-      const filterParams = {
-        dateRange,
-        port: selectedPort,
-        shipId: selectedShip
-      };
-
-      // 1. Summary Cards
-      const summaryRes = await api.analytics.getSummary(filterParams).catch(() => null);
-      if (summaryRes?.summary) {
-        setSummaryData(summaryRes.summary);
-      }
-
-      // 2. Port Manager Charts
-      const portRes = await api.analytics.getPortManager(filterParams).catch(() => null);
-      if (portRes?.charts) {
-        setPortCharts(portRes.charts);
-      }
-
-      // 3. Ship Manager Charts
-      const shipRes = await api.analytics.getShipManager(filterParams).catch(() => null);
-      if (shipRes?.charts) {
-        setShipCharts(shipRes.charts);
-      }
-
-      // 4. Inspector Charts
-      const inspRes = await api.analytics.getInspector(filterParams).catch(() => null);
-      if (inspRes?.charts) {
-        setInspectorCharts(inspRes.charts);
-      }
-
-      // 5. Admin Charts (if admin)
-      if (user?.role === 'admin') {
-        const adminRes = await api.analytics.getAdmin(filterParams).catch(() => null);
-        if (adminRes?.charts) {
-          setAdminCharts(adminRes.charts);
-        }
-      }
-    } catch (err) {
-      console.warn('Analytics fetch using resilient fallback data:', err);
-    } finally {
-      setLoading(false);
+    setAnalyticsError('');
+    setSummaryData(null);
+    setPortCharts(null);
+    setShipCharts(null);
+    setInspectorCharts(null);
+    setAdminCharts(null);
+    const filterParams = { dateRange, port: selectedPort, shipId: selectedShip };
+    const sections = [
+      ['summary', () => api.analytics.getSummary(filterParams)],
+      ['port', () => api.analytics.getPortManager(filterParams)],
+      ['ships', () => api.analytics.getShipManager(filterParams)],
+      ['inspections', () => api.analytics.getInspector(filterParams)]
+    ];
+    if (user?.role === 'admin') {
+      sections.push(['admin', () => api.analytics.getAdmin(filterParams)]);
     }
+
+    const results = await Promise.allSettled(sections.map(([, request]) => request()));
+    const responses = {};
+    const failedSections = [];
+
+    results.forEach((result, index) => {
+      const [name] = sections[index];
+      if (result.status === 'fulfilled') {
+        responses[name] = result.value;
+      } else {
+        responses[name] = null;
+        failedSections.push(name);
+      }
+    });
+
+    setSummaryData(responses.summary?.summary || null);
+    setPortCharts(responses.port?.charts || null);
+    setShipCharts(responses.ships?.charts || null);
+    setInspectorCharts(responses.inspections?.charts || null);
+    setAdminCharts(responses.admin?.charts || null);
+    setAvailablePorts(responses.summary?.filters?.ports || []);
+    setAvailableShips(responses.summary?.filters?.ships || []);
+    setAnalyticsError(failedSections.length ? `Unable to load: ${failedSections.join(', ')} analytics.` : '');
+    setLoading(false);
   };
 
   // Trigger Drill-down from Chart Clicks
@@ -411,6 +243,12 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
         </div>
       )}
 
+      {analyticsError && (
+        <div role="alert" className="maritime-card" style={{ padding: '12px 16px', marginBottom: '20px', color: '#991b1b', borderColor: '#fecaca' }}>
+          {analyticsError}
+        </div>
+      )}
+
       {/* 2. Global Filter Toolbar */}
       <div className="maritime-card" style={{ padding: '16px 20px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
@@ -443,10 +281,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
                 onChange={(e) => setSelectedPort(e.target.value)}
               >
                 <option value="ALL">All Ports & Bays</option>
-                <option value="Mumbai Port">Mumbai Port Terminal</option>
-                <option value="Singapore">Port of Singapore</option>
-                <option value="Jebel Ali">Jebel Ali Port</option>
-                <option value="Rotterdam">Port of Rotterdam</option>
+                {availablePorts.map(port => <option key={port} value={port}>{port}</option>)}
               </select>
             </div>
 
@@ -458,10 +293,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
               onChange={(e) => setSelectedShip(e.target.value)}
             >
               <option value="ALL">All Vessels</option>
-              <option value="MSC Irina">MSC Irina</option>
-              <option value="Ever Given">Ever Given</option>
-              <option value="Maersk Mc-Kinney">Maersk Mc-Kinney</option>
-              <option value="CMA CGM Jacques">CMA CGM Jacques</option>
+              {availableShips.map(ship => <option key={ship.shipId} value={ship.shipId}>{ship.name}</option>)}
             </select>
           </div>
 
@@ -487,7 +319,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
       </div>
 
       {/* 3. Fifteen Summary Cards Grid */}
-      <div style={{
+      {summaryData ? <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
         gap: '14px',
@@ -511,7 +343,11 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
         <SummaryCard {...summaryData.totalAuditEvents} onClick={() => onNavigate && onNavigate('audit')} />
         <SummaryCard {...summaryData.failedLogins} onClick={() => onNavigate && onNavigate('audit')} />
         <SummaryCard {...summaryData.auditIntegrity} onClick={() => onNavigate && onNavigate('audit')} />
-      </div>
+      </div> : (
+        <div className="maritime-card" style={{ padding: '20px', marginBottom: '26px', color: '#64748b' }}>
+          {loading ? 'Loading live summary...' : 'No summary data is available.'}
+        </div>
+      )}
 
       {/* 4. Interactive Domain Workspace Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -581,7 +417,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="Container Movement Status"
             subtitle="Breakdown across Gate In, Yard Stacking, Loading, and Transit"
             type="doughnut"
-            data={portCharts?.containerMovementStatus || DEFAULT_PORT_CHARTS.containerMovementStatus}
+            data={portCharts?.containerMovementStatus}
             onElementClick={handleChartElementClick}
             drilldownType="containers"
           />
@@ -590,7 +426,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="Vessel Status Distribution"
             subtitle="Active fleet sailing at sea vs berthed in port"
             type="doughnut"
-            data={shipCharts?.shipStatusDistribution || DEFAULT_SHIP_CHARTS.shipStatusDistribution}
+            data={shipCharts?.shipStatusDistribution}
             onElementClick={handleChartElementClick}
             drilldownType="ships"
           />
@@ -599,7 +435,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="7-Point Safety Inspection Results"
             subtitle="Containers meeting ISO 17712 standards vs flagged for hold"
             type="doughnut"
-            data={inspectorCharts?.inspectionResultDistribution || DEFAULT_INSPECTOR_CHARTS.inspectionResultDistribution}
+            data={inspectorCharts?.inspectionResultDistribution}
             onElementClick={handleChartElementClick}
             drilldownType="inspections"
           />
@@ -608,7 +444,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="Audit Events by Action Type"
             subtitle="High-frequency operational events recorded in immutable ledger"
             type="bar"
-            data={adminCharts?.auditEventsByAction || DEFAULT_ADMIN_CHARTS.auditEventsByAction}
+            data={adminCharts?.auditEventsByAction}
             onElementClick={handleChartElementClick}
             drilldownType="audit"
           />
@@ -624,7 +460,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="1. Container Movement Status"
             subtitle="Containers in gate entry, yard, loading, unloading, loaded, and on hold"
             type="doughnut"
-            data={portCharts?.containerMovementStatus || DEFAULT_PORT_CHARTS.containerMovementStatus}
+            data={portCharts?.containerMovementStatus}
             onElementClick={handleChartElementClick}
             drilldownType="containers"
           />
@@ -633,7 +469,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="2. Daily Gate Entry and Exit"
             subtitle="Comparison of gate-in vs gate-out truck deliveries"
             type="bar"
-            data={portCharts?.dailyGateEntryExit || DEFAULT_PORT_CHARTS.dailyGateEntryExit}
+            data={portCharts?.dailyGateEntryExit}
             unit="TEU"
           />
 
@@ -641,31 +477,31 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="3. Loading and Unloading Trends"
             subtitle="Quay crane operations throughput over time"
             type="line"
-            data={portCharts?.loadingUnloadingTrends || DEFAULT_PORT_CHARTS.loadingUnloadingTrends}
-            unit="TEU/hr"
+            data={portCharts?.loadingUnloadingTrends}
+            unit="events"
           />
 
           <ChartCard
             title="4. Yard Occupancy by Zone"
             subtitle="Occupied capacity across dry, reefer, and hazardous blocks"
             type="bar"
-            data={portCharts?.yardOccupancy || DEFAULT_PORT_CHARTS.yardOccupancy}
-            unit="%"
+            data={portCharts?.yardOccupancy}
+            unit="containers"
           />
 
           <ChartCard
             title="5. Berth Occupancy & Ship Allocation"
             subtitle="Quay berth utilization and ship assignment"
             type="horizontalBar"
-            data={portCharts?.berthOccupancy || DEFAULT_PORT_CHARTS.berthOccupancy}
-            unit="%"
+            data={portCharts?.berthOccupancy}
+            unit="allocations"
           />
 
           <ChartCard
             title="6. Port Activity by Operation Type"
             subtitle="Gate entries, yard transfers, crane loading, and holds"
             type="bar"
-            data={portCharts?.portActivityByType || DEFAULT_PORT_CHARTS.portActivityByType}
+            data={portCharts?.portActivityByType}
             unit="Ops"
           />
 
@@ -673,7 +509,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="7. Operational Delays by Reason"
             subtitle="Customs holds, monsoons, and berth congestion"
             type="bar"
-            data={portCharts?.operationalDelays || DEFAULT_PORT_CHARTS.operationalDelays}
+            data={portCharts?.operationalDelays}
             unit="Events"
           />
 
@@ -681,7 +517,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="8. Container Processing & Dwell Time"
             subtitle="Average turnaround duration between milestone steps"
             type="bar"
-            data={portCharts?.containerProcessingTime || DEFAULT_PORT_CHARTS.containerProcessingTime}
+            data={portCharts?.containerProcessingTime}
             unit="Hours"
           />
         </div>
@@ -696,7 +532,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="1. Ship Status Distribution"
             subtitle="Ships sailing, at port, berthed, delayed, or in dry-dock"
             type="doughnut"
-            data={shipCharts?.shipStatusDistribution || DEFAULT_SHIP_CHARTS.shipStatusDistribution}
+            data={shipCharts?.shipStatusDistribution}
             onElementClick={handleChartElementClick}
             drilldownType="ships"
           />
@@ -705,7 +541,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="2. Active Voyage Progress"
             subtitle="Sailing progress and completion status for live sea routes"
             type="bar"
-            data={shipCharts?.activeVoyagesChart || DEFAULT_SHIP_CHARTS.activeVoyagesChart}
+            data={shipCharts?.activeVoyagesChart}
             unit="%"
           />
 
@@ -713,7 +549,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="3. Estimated vs Actual Arrival"
             subtitle="Comparing planned ETA against actual arrival durations"
             type="bar"
-            data={shipCharts?.arrivalComparison || DEFAULT_SHIP_CHARTS.arrivalComparison}
+            data={shipCharts?.arrivalComparison}
             unit="Days"
           />
 
@@ -721,7 +557,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="4. Voyage Delays by Route"
             subtitle="Sea voyage delay hours recorded per shipping lane"
             type="bar"
-            data={shipCharts?.voyageDelays || DEFAULT_SHIP_CHARTS.voyageDelays}
+            data={shipCharts?.voyageDelays}
             unit="Hours"
           />
 
@@ -729,7 +565,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="5. Active Vessel Speed Trend"
             subtitle="Cruising speed monitoring over voyage coordinates"
             type="line"
-            data={shipCharts?.shipSpeedTrend || DEFAULT_SHIP_CHARTS.shipSpeedTrend}
+            data={shipCharts?.shipSpeedTrend}
             unit="Knots"
           />
 
@@ -737,8 +573,8 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="6. Containers by Ship Allocation"
             subtitle="Assigned vs loaded vs pending container inventory per vessel"
             type="bar"
-            data={shipCharts?.containersByShip || DEFAULT_SHIP_CHARTS.containersByShip}
-            unit="TEU"
+            data={shipCharts?.containersByShip}
+            unit="containers"
           />
         </div>
       )}
@@ -752,7 +588,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="1. Inspection Result Distribution"
             subtitle="Passed, Failed, Quarantine Holds, and Repair Required"
             type="doughnut"
-            data={inspectorCharts?.inspectionResultDistribution || DEFAULT_INSPECTOR_CHARTS.inspectionResultDistribution}
+            data={inspectorCharts?.inspectionResultDistribution}
             onElementClick={handleChartElementClick}
             drilldownType="inspections"
           />
@@ -761,7 +597,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="2. Inspections Completed Over Time"
             subtitle="Daily volume of 7-point physical inspections"
             type="line"
-            data={inspectorCharts?.inspectionsOverTime || DEFAULT_INSPECTOR_CHARTS.inspectionsOverTime}
+            data={inspectorCharts?.inspectionsOverTime}
             unit="Units"
           />
 
@@ -769,7 +605,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="3. Pass & Fail Trends Comparison"
             subtitle="Weekly compliance rate of container inspections"
             type="stackedBar"
-            data={inspectorCharts?.passFailTrends || DEFAULT_INSPECTOR_CHARTS.passFailTrends}
+            data={inspectorCharts?.passFailTrends}
             unit="Units"
           />
 
@@ -777,7 +613,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="4. Common Inspection Failures"
             subtitle="Damaged seals, structural cracks, IMDG labels, and reefer issues"
             type="horizontalBar"
-            data={inspectorCharts?.commonInspectionFailures || DEFAULT_INSPECTOR_CHARTS.commonInspectionFailures}
+            data={inspectorCharts?.commonInspectionFailures}
             unit="Cases"
           />
 
@@ -785,7 +621,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="5. Inspector Workload Allocation"
             subtitle="Completed vs pending inspection queues per officer"
             type="bar"
-            data={inspectorCharts?.inspectorWorkload || DEFAULT_INSPECTOR_CHARTS.inspectorWorkload}
+            data={inspectorCharts?.inspectorWorkload}
             unit="Tasks"
           />
 
@@ -793,8 +629,8 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="6. Inspection Completion Time"
             subtitle="Average turnaround duration by inspection category"
             type="bar"
-            data={inspectorCharts?.inspectionCompletionTime || DEFAULT_INSPECTOR_CHARTS.inspectionCompletionTime}
-            unit="Mins"
+            data={inspectorCharts?.inspectionCompletionTime}
+            unit="hours"
           />
         </div>
       )}
@@ -808,14 +644,14 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="1. User Distribution by Role"
             subtitle="Admin, Port Manager, Ship Manager, Inspector, and Viewer accounts"
             type="doughnut"
-            data={adminCharts?.userDistribution || DEFAULT_ADMIN_CHARTS.userDistribution}
+            data={adminCharts?.userDistribution}
           />
 
           <ChartCard
             title="2. User Activity Over Time"
             subtitle="System logins, record creations, updates, and exports"
             type="line"
-            data={adminCharts?.userActivityOverTime || DEFAULT_ADMIN_CHARTS.userActivityOverTime}
+            data={adminCharts?.userActivityOverTime}
             unit="Actions"
           />
 
@@ -823,7 +659,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="3. Audit Events by Action Type"
             subtitle="Event frequency breakdown in cryptographic ledger"
             type="bar"
-            data={adminCharts?.auditEventsByAction || DEFAULT_ADMIN_CHARTS.auditEventsByAction}
+            data={adminCharts?.auditEventsByAction}
             unit="Logs"
             onElementClick={handleChartElementClick}
             drilldownType="audit"
@@ -833,7 +669,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="4. Audit Events by User Role"
             subtitle="Operational contribution by officer role"
             type="bar"
-            data={adminCharts?.auditEventsByRole || DEFAULT_ADMIN_CHARTS.auditEventsByRole}
+            data={adminCharts?.auditEventsByRole}
             unit="Logs"
           />
 
@@ -841,14 +677,14 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="5. Audit Integrity Status"
             subtitle="Cryptographically verified blocks vs flagged anomalies"
             type="doughnut"
-            data={adminCharts?.auditIntegrityStatus || DEFAULT_ADMIN_CHARTS.auditIntegrityStatus}
+            data={adminCharts?.auditIntegrityStatus}
           />
 
           <ChartCard
             title="6. Failed Logins & Security Events"
             subtitle="Security monitoring, password resets, and critical alerts"
             type="bar"
-            data={adminCharts?.securityEventsOverTime || DEFAULT_ADMIN_CHARTS.securityEventsOverTime}
+            data={adminCharts?.securityEventsOverTime}
             unit="Events"
           />
 
@@ -856,7 +692,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="7. Record Changes Over Time"
             subtitle="Total containers, ships, voyages, and inspections tracked"
             type="bar"
-            data={adminCharts?.recordChangesOverTime || DEFAULT_ADMIN_CHARTS.recordChangesOverTime}
+            data={adminCharts?.recordChangesOverTime}
             unit="Entities"
           />
 
@@ -864,7 +700,7 @@ export const AnalyticsPage = ({ onNavigate, initialTab }) => {
             title="8. Top Active Users"
             subtitle="Officers with highest number of verified actions"
             type="horizontalBar"
-            data={adminCharts?.topActiveUsers || DEFAULT_ADMIN_CHARTS.topActiveUsers}
+            data={adminCharts?.topActiveUsers}
             unit="Actions"
           />
         </div>

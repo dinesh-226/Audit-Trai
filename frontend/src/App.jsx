@@ -91,7 +91,14 @@ function MainApp() {
   const [editingContainer, setEditingContainer] = useState(null);
   const [showContainerModal, setShowContainerModal] = useState(false);
   const [inspectionContainerId, setInspectionContainerId] = useState(null);
+  const [showInspectionModal, setShowInspectionModal] = useState(false);
+  const [inspectionRefreshKey, setInspectionRefreshKey] = useState(0);
   const [evidenceContainerId, setEvidenceContainerId] = useState(null);
+
+  const handleOpenInspectionModal = (containerId = null) => {
+    setInspectionContainerId(containerId);
+    setShowInspectionModal(true);
+  };
 
   // Persist viewMode
   useEffect(() => {
@@ -343,7 +350,7 @@ function MainApp() {
             containerId={selectedContainerId}
             onBack={() => setActiveTab('containers')}
             onOpenTimeline={handleOpenTimeline}
-            onOpenInspection={(cId) => setInspectionContainerId(cId)}
+            onOpenInspection={handleOpenInspectionModal}
             onOpenEvidence={(cId) => setEvidenceContainerId(cId)}
           />
         )}
@@ -372,7 +379,10 @@ function MainApp() {
         )}
 
         {activeTab === 'inspections' && (
-          <InspectionsPage onOpenInspectionModal={(cId) => setInspectionContainerId(cId || null)} />
+          <InspectionsPage
+            onOpenInspectionModal={handleOpenInspectionModal}
+            refreshKey={inspectionRefreshKey}
+          />
         )}
 
         {activeTab === 'evidence' && (
@@ -525,12 +535,15 @@ function MainApp() {
       )}
 
       {/* Inspection Modal */}
-      {inspectionContainerId && (
+      {showInspectionModal && (
         <InspectionModal
-          containerId={inspectionContainerId}
-          onClose={() => setInspectionContainerId(null)}
+          containerId={inspectionContainerId || ''}
+          onClose={() => {
+            setShowInspectionModal(false);
+            setInspectionContainerId(null);
+          }}
           onSaved={() => {
-            // reloaded
+            setInspectionRefreshKey(key => key + 1);
           }}
         />
       )}

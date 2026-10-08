@@ -55,172 +55,69 @@ const TILE_LAYERS = {
   }
 };
 
-const DEFAULT_MAP_DATA = {
-  ports: [
-    { id: 'PORT-BOM', name: 'Mumbai Port (JNPT)', code: 'INBOM', lat: 18.948, lng: 72.835, country: 'India', status: 'Optimal' },
-    { id: 'PORT-SIN', name: 'Singapore Port', code: 'SGSIN', lat: 1.264, lng: 103.820, country: 'Singapore', status: 'Congested' },
-    { id: 'PORT-RTM', name: 'Rotterdam Port', code: 'NLRTM', lat: 51.924, lng: 4.477, country: 'Netherlands', status: 'Optimal' },
-    { id: 'PORT-SHA', name: 'Shanghai Deepwater Port', code: 'CNSHA', lat: 31.230, lng: 121.473, country: 'China', status: 'High Throughput' },
-    { id: 'PORT-DXB', name: 'Dubai Port (Jebel Ali)', code: 'AEDXB', lat: 25.011, lng: 55.061, country: 'UAE', status: 'Optimal' },
-    { id: 'PORT-CMB', name: 'Colombo Port', code: 'LKCMB', lat: 6.949, lng: 79.845, country: 'Sri Lanka', status: 'Optimal' },
-    { id: 'PORT-HAM', name: 'Hamburg Port', code: 'DEHAM', lat: 53.548, lng: 9.987, country: 'Germany', status: 'Optimal' },
-    { id: 'PORT-NYC', name: 'New York / New Jersey Port', code: 'USNYC', lat: 40.712, lng: -74.006, country: 'USA', status: 'Optimal' }
-  ],
-  ships: [
-    {
-      shipId: 'SH-101',
-      name: 'MSC Irina',
-      imoNumber: 'IMO 9805467',
-      flag: 'Panama',
-      captain: 'Capt. Jonathan Vance',
-      status: 'In Transit',
-      departurePort: 'Singapore Port',
-      arrivalPort: 'Mumbai Port',
-      coordinates: { lat: 14.82, lng: 74.15, speedKnots: 19.8, heading: 312 },
-      containersOnboardCount: 4
-    },
-    {
-      shipId: 'SH-102',
-      name: 'Ever Ace',
-      imoNumber: 'IMO 9893890',
-      flag: 'Panama',
-      captain: 'Capt. Marcus Sterling',
-      status: 'In Transit',
-      departurePort: 'Rotterdam Port',
-      arrivalPort: 'Dubai Port',
-      coordinates: { lat: 22.45, lng: 60.18, speedKnots: 18.2, heading: 285 },
-      containersOnboardCount: 3
-    }
-  ],
-  containers: [
-    {
-      containerId: 'MSCU-8829104',
-      type: 'Reefer 40ft',
-      size: '40ft',
-      status: 'Yard Storage',
-      cargoDescription: 'Norwegian Atlantic Salmon (Cold-Chain Grade)',
-      currentLocation: 'Mumbai Port - Yard Block B (Reefer Stacks #04)',
-      lat: 18.952,
-      lng: 72.842,
-      isReefer: true,
-      temperatureCelsius: -19.4,
-      targetTemperature: -20,
-      reeferStatus: 'Normal',
-      powerStatus: 'Connected / Grid',
-      sealNumber: 'SEAL-8829104',
-      sealStatus: 'Intact',
-      riskLevel: 'Low',
-      riskScore: 10
-    },
-    {
-      containerId: 'CMAU-4920193',
-      type: 'Reefer 40ft',
-      size: '40ft',
-      status: 'Under Inspection',
-      cargoDescription: 'Belgian Bio-Pharmaceutical Vaccines',
-      currentLocation: 'Mumbai Port - Inspection Bay #02',
-      lat: 18.945,
-      lng: 72.831,
-      isReefer: true,
-      temperatureCelsius: 6.8,
-      targetTemperature: 4,
-      reeferStatus: 'Warning',
-      powerStatus: 'Genset Active',
-      sealNumber: 'SEAL-4920193',
-      sealStatus: 'Intact',
-      riskLevel: 'Medium',
-      riskScore: 45
-    },
-    {
-      containerId: 'ONEU-8821094',
-      type: 'Dry 40ft',
-      size: '40ft',
-      status: 'In Transit',
-      cargoDescription: 'Precision Automotive Electronics',
-      currentLocation: 'Onboard MSC Irina (Arabian Sea)',
-      assignedShipName: 'MSC Irina',
-      lat: 14.82,
-      lng: 74.15,
-      isReefer: false,
-      temperatureCelsius: null,
-      reeferStatus: 'Ambient',
-      sealNumber: 'SL-884920-SEC',
-      sealStatus: 'Intact',
-      riskLevel: 'Low',
-      riskScore: 10
-    },
-    {
-      containerId: 'OOLU-3382910',
-      type: 'Reefer 40ft',
-      size: '40ft',
-      status: 'Quarantine Hold',
-      cargoDescription: 'Export Grade Australian Wagyu Beef',
-      currentLocation: 'Mumbai Port - Quarantine Reefer Hold #01',
-      lat: 18.958,
-      lng: 72.839,
-      isReefer: true,
-      temperatureCelsius: -12.4,
-      targetTemperature: -18,
-      reeferStatus: 'Critical',
-      powerStatus: 'Disconnected / Offline',
-      sealNumber: 'SEAL-3382910',
-      sealStatus: 'Tampered Flag',
-      riskLevel: 'High',
-      riskScore: 85
-    }
-  ]
-};
-
 export const LiveTrackingPage = ({ onSelectShip }) => {
-  const [mapData, setMapData] = useState(DEFAULT_MAP_DATA);
+  const [mapData, setMapData] = useState({ ports: [], ships: [], containers: [] });
   const [loading, setLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState({ type: 'container', data: DEFAULT_MAP_DATA.containers[0] });
-  const [isSimulating, setIsSimulating] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [mapError, setMapError] = useState('');
   const [activeTileLayer, setActiveTileLayer] = useState('streets');
-  const [containerFilter, setContainerFilter] = useState('all'); // 'all', 'reefer', 'transit', 'yard', 'warning'
+  const [containerFilter, setContainerFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState('leaflet'); // 'leaflet' or 'tactical'
+  const [viewMode, setViewMode] = useState('leaflet');
 
   const mapContainerRef = useRef(null);
   const leafletMapRef = useRef(null);
   const tileLayerInstanceRef = useRef(null);
   const markersLayerGroupRef = useRef(null);
+  const recordedPositionCount = [
+    ...mapData.ships.map(ship => ship.coordinates),
+    ...mapData.containers
+  ].filter(position => Number.isFinite(position?.lat) && Number.isFinite(position?.lng)).length;
 
-  // Initial Fetch
   useEffect(() => {
     fetchMapData();
   }, []);
 
-  // Simulation tick loop
   useEffect(() => {
-    let interval = null;
-    if (isSimulating) {
-      interval = setInterval(async () => {
-        try {
-          await api.tracking.simulateStep();
-          await fetchMapData(false);
-        } catch (e) {
-          console.error('Simulation error:', e);
-        }
-      }, 3500);
-    }
-    return () => clearInterval(interval);
-  }, [isSimulating]);
+    if (viewMode !== 'leaflet' || !leafletMapRef.current) return;
+    const positions = [
+      ...mapData.ships.map(ship => ship.coordinates),
+      ...mapData.containers
+    ].filter(position => Number.isFinite(position?.lat) && Number.isFinite(position?.lng));
+    if (!positions.length) return;
+    const bounds = L.latLngBounds(positions.map(position => [position.lat, position.lng]));
+    if (positions.length === 1) leafletMapRef.current.setView(bounds.getCenter(), 8);
+    else leafletMapRef.current.fitBounds(bounds.pad(0.15), { maxZoom: 8 });
+  }, [mapData, viewMode]);
 
-  const fetchMapData = async (initial = true) => {
+  const fetchMapData = async () => {
+    setMapError('');
     try {
       const data = await api.tracking.getLiveMap();
-      if (data && (data.ships?.length > 0 || data.containers?.length > 0)) {
-        setMapData({
-          ports: data.ports?.length > 0 ? data.ports : DEFAULT_MAP_DATA.ports,
-          ships: data.ships?.length > 0 ? data.ships : DEFAULT_MAP_DATA.ships,
-          containers: data.containers?.length > 0 ? data.containers : DEFAULT_MAP_DATA.containers
-        });
-      }
+      const nextData = {
+        ports: Array.isArray(data?.ports) ? data.ports : [],
+        ships: Array.isArray(data?.ships) ? data.ships : [],
+        containers: Array.isArray(data?.containers) ? data.containers : []
+      };
+      setMapData(nextData);
+      setSelectedItem(previous => {
+        if (previous?.type === 'ship') {
+          const ship = nextData.ships.find(item => item.shipId === previous.data.shipId);
+          if (ship) return { type: 'ship', data: ship };
+        }
+        if (previous?.type === 'container') {
+          const container = nextData.containers.find(item => item.containerId === previous.data.containerId);
+          if (container) return { type: 'container', data: container };
+        }
+        return null;
+      });
     } catch (e) {
-      console.warn('Using default map telemetry:', e.message);
+      console.error('Failed to load recorded map data:', e);
+      setMapData({ ports: [], ships: [], containers: [] });
+      setSelectedItem(null);
+      setMapError(e.message || 'Unable to load map data.');
     } finally {
-      if (initial) setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -243,8 +140,8 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
 
     try {
       const map = L.map(mapContainerRef.current, {
-        center: [18.948, 72.835], // Mumbai default
-        zoom: 4,
+        center: [20, 0],
+        zoom: 2,
         zoomControl: true,
         attributionControl: false
       });
@@ -282,7 +179,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
     if (viewMode !== 'leaflet' || !leafletMapRef.current || !tileLayerInstanceRef.current) return;
 
     try {
-      const layerConfig = TILE_LAYERS[activeTileLayer] || TILE_LAYERS.voyager;
+      const layerConfig = TILE_LAYERS[activeTileLayer] || TILE_LAYERS.streets;
       leafletMapRef.current.removeLayer(tileLayerInstanceRef.current);
 
       const newTileLayer = L.tileLayer(layerConfig.url, {
@@ -369,26 +266,26 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
           ">
             <span>🚢</span>
             <span>${ship.name}</span>
-            <span style="background: rgba(255,255,255,0.25); padding: 1px 4px; border-radius: 4px; font-size: 9px;">${ship.coordinates?.speedKnots || 18}kts</span>
+            <span style="background: rgba(255,255,255,0.25); padding: 1px 4px; border-radius: 4px; font-size: 9px;">${ship.coordinates?.speedKnots ?? 'Speed n/a'}</span>
           </div>
         `,
         iconSize: [115, 30],
         iconAnchor: [57, 15]
       });
 
-      if (ship.coordinates?.lat && ship.coordinates?.lng) {
+      if (Number.isFinite(ship.coordinates?.lat) && Number.isFinite(ship.coordinates?.lng)) {
         const marker = L.marker([ship.coordinates.lat, ship.coordinates.lng], { icon: shipIcon });
         marker.bindPopup(`
           <div style="font-family: sans-serif; padding: 4px; min-width: 200px;">
-            <div style="font-size: 10px; color: #0284c7; font-weight: 800; text-transform: uppercase;">VESSEL AIS TELEMETRY</div>
+            <div style="font-size: 10px; color: #0284c7; font-weight: 800; text-transform: uppercase;">RECORDED VESSEL POSITION</div>
             <div style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 2px 0;">${ship.name}</div>
-            <div style="font-size: 11px; color: #64748b;">${ship.imoNumber} &bull; Flag: ${ship.flag || 'Panama'}</div>
+            <div style="font-size: 11px; color: #64748b;">${ship.imoNumber || 'IMO not recorded'}${ship.flag ? ` &bull; Flag: ${ship.flag}` : ''}</div>
             <div style="font-size: 12px; color: #0369a1; margin: 6px 0; font-weight: 600;">
               ${ship.departurePort} ➔ ${ship.arrivalPort}
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 11px; color: #334155; background: #f0f9ff; padding: 6px 8px; border-radius: 6px;">
-              <span>Speed: <strong>${ship.coordinates?.speedKnots || 18} kts</strong></span>
-              <span>Heading: <strong>${ship.coordinates?.heading || 312}°</strong></span>
+              <span>Speed: <strong>${ship.coordinates?.speedKnots != null ? `${ship.coordinates.speedKnots} kts` : 'Not recorded'}</strong></span>
+              <span>Heading: <strong>${ship.coordinates?.heading ?? 'Not recorded'}${ship.coordinates?.heading != null ? '°' : ''}</strong></span>
             </div>
           </div>
         `);
@@ -448,7 +345,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
         ">
           <span style="width: 8px; height: 8px; border-radius: 50%; background: ${badgeColor};"></span>
           <span>${container.containerId}</span>
-          ${container.isReefer && container.temperatureCelsius !== null ? `
+          ${container.isReefer && container.temperatureCelsius != null ? `
             <span style="background: ${container.temperatureCelsius > -10 ? '#fee2e2' : '#e0f2fe'}; color: ${container.temperatureCelsius > -10 ? '#b91c1c' : '#0369a1'}; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 800;">
               ${container.temperatureCelsius}°C
             </span>
@@ -463,7 +360,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
         iconAnchor: [55, 13]
       });
 
-      if (container.lat && container.lng) {
+      if (Number.isFinite(container.lat) && Number.isFinite(container.lng)) {
         const marker = L.marker([container.lat, container.lng], { icon: containerIcon });
         
         marker.bindPopup(`
@@ -488,10 +385,10 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; margin: 6px 0; font-size: 11px;">
               <div>📍 <strong>Location:</strong> ${container.currentLocation}</div>
               ${container.assignedShipName ? `<div>🚢 <strong>Vessel:</strong> ${container.assignedShipName}</div>` : ''}
-              <div>🔒 <strong>Seal:</strong> <code>${container.sealNumber}</code> (${container.sealStatus})</div>
+              <div>🔒 <strong>Seal:</strong> <code>${container.sealNumber || 'Not recorded'}</code></div>
               ${container.isReefer ? `
                 <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #e2e8f0; color: #0284c7; font-weight: 700;">
-                  🌡️ Temp: <strong>${container.temperatureCelsius}°C</strong> (Target: ${container.targetTemperature || -20}°C)
+                  🌡️ Temp: <strong>${container.temperatureCelsius ?? 'Not recorded'}${container.temperatureCelsius != null ? '°C' : ''}</strong> (Target: ${container.targetTemperature != null ? `${container.targetTemperature}°C` : 'Not recorded'})
                 </div>
               ` : ''}
             </div>
@@ -520,7 +417,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
 
   const handleSelectContainerFromList = (container) => {
     setSelectedItem({ type: 'container', data: container });
-    if (container.lat && container.lng) {
+    if (Number.isFinite(container.lat) && Number.isFinite(container.lng)) {
       handleFlyTo(container.lat, container.lng, 12);
     }
   };
@@ -554,14 +451,14 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
             <span>GEO-SPATIAL MARITIME & CONTAINER TRACKING</span>
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: '4px 0 2px 0' }}>
-            Global Container & AIS Fleet Map
+            Fleet & Container Positions
           </h1>
           <div style={{ fontSize: '13px', color: '#64748b' }}>
-            Real-world interactive map tracking container locations, cold-chain reefer temperatures, yard stacks & sailing vessels
+            Recorded vessel coordinates and containers assigned to positioned vessels
           </div>
         </div>
 
-        {/* Live Simulation Controls & Mode Switcher */}
+          {/* Map mode and refresh controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {/* Mode Switcher */}
           <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
@@ -597,37 +494,13 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
             </button>
           </div>
 
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            color: '#15803d',
-            fontWeight: 700
-          }}>
-            <span className="pulse-dot" style={{ background: '#10b981' }} />
-            <span>{isSimulating ? 'STREAMING ACTIVE' : 'LIVE TELEMETRY'}</span>
-          </div>
-
           <button
-            onClick={() => setIsSimulating(!isSimulating)}
-            className={`btn btn-sm ${isSimulating ? 'btn-danger' : 'btn-primary'}`}
-            style={{
-              padding: '7px 14px',
-              fontSize: '12px',
-              fontWeight: 700,
-              background: isSimulating ? '#dc2626' : '#0f3460',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
+            onClick={fetchMapData}
+            className="btn btn-secondary"
+            disabled={loading}
           >
-            {isSimulating ? <Pause size={14} /> : <Play size={14} />}
-            <span>{isSimulating ? 'Pause Stream' : 'Live Auto-Stream'}</span>
+            <RotateCw size={14} />
+            <span>{loading ? 'Refreshing...' : 'Refresh data'}</span>
           </button>
         </div>
       </div>
@@ -718,8 +591,8 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
           overflow: 'hidden',
           position: 'relative'
         }}>
-          {/* Quick Port Jump Buttons */}
-          <div style={{
+          {/* Quick jumps to recorded vessel positions */}
+          {mapData.ships.some(ship => Number.isFinite(ship.coordinates?.lat) && Number.isFinite(ship.coordinates?.lng)) && <div style={{
             position: 'absolute',
             top: '12px',
             left: '12px',
@@ -734,17 +607,11 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
             border: '1px solid #e2e8f0',
             flexWrap: 'wrap'
           }}>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#0f3460', alignSelf: 'center', paddingLeft: '2px' }}>Quick Port Jump:</span>
-            {[
-              { name: 'Mumbai', lat: 18.948, lng: 72.835, zoom: 12 },
-              { name: 'Singapore', lat: 1.264, lng: 103.820, zoom: 12 },
-              { name: 'Rotterdam', lat: 51.924, lng: 4.477, zoom: 12 },
-              { name: 'Dubai', lat: 25.011, lng: 55.061, zoom: 12 },
-              { name: 'Global', lat: 20, lng: 75, zoom: 3 }
-            ].map(p => (
+            <span style={{ fontSize: '11px', fontWeight: 800, color: '#0f3460', alignSelf: 'center', paddingLeft: '2px' }}>Positioned vessels:</span>
+            {mapData.ships.filter(ship => Number.isFinite(ship.coordinates?.lat) && Number.isFinite(ship.coordinates?.lng)).map(ship => (
               <button
-                key={p.name}
-                onClick={() => handleFlyTo(p.lat, p.lng, p.zoom)}
+                key={ship.shipId}
+                onClick={() => handleFlyTo(ship.coordinates.lat, ship.coordinates.lng, 8)}
                 style={{
                   background: '#ffffff',
                   border: '1px solid #cbd5e1',
@@ -756,10 +623,10 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
                   cursor: 'pointer'
                 }}
               >
-                {p.name}
+                {ship.name}
               </button>
             ))}
-          </div>
+          </div>}
 
           {/* Leaflet Map Canvas */}
           {viewMode === 'leaflet' ? (
@@ -801,7 +668,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
 
                 {/* Ships */}
                 {(mapData.ships || []).map((ship) => {
-                  if (!ship.coordinates?.lat) return null;
+                  if (!Number.isFinite(ship.coordinates?.lat) || !Number.isFinite(ship.coordinates?.lng)) return null;
                   const { x, y } = mapCoordsToSvg(ship.coordinates.lat, ship.coordinates.lng);
                   return (
                     <g key={ship.shipId} transform={`translate(${x}, ${y})`} style={{ cursor: 'pointer' }} onClick={() => setSelectedItem({ type: 'ship', data: ship })}>
@@ -814,7 +681,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
 
                 {/* Containers */}
                 {(mapData.containers || []).map((c) => {
-                  if (!c.lat) return null;
+                  if (!Number.isFinite(c.lat) || !Number.isFinite(c.lng)) return null;
                   const { x, y } = mapCoordsToSvg(c.lat, c.lng);
                   const color = c.isReefer ? '#38bdf8' : '#10b981';
                   return (
@@ -825,6 +692,37 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
                   );
                 })}
               </svg>
+            </div>
+          )}
+
+          {(mapError || (!loading && recordedPositionCount === 0)) && (
+            <div
+              role={mapError ? 'alert' : 'status'}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 500,
+                width: 'min(440px, calc(100% - 32px))',
+                padding: '18px 20px',
+                textAlign: 'center',
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                borderRadius: '8px',
+                boxShadow: '0 4px 18px rgba(15, 23, 42, 0.14)',
+                color: '#475569'
+              }}
+            >
+              <div style={{ fontWeight: 800, color: mapError ? '#991b1b' : '#0f172a', marginBottom: '4px' }}>
+                {mapError ? 'Map data unavailable' : mapData.ships.length + mapData.containers.length === 0 ? 'No vessel or container records' : 'No coordinates recorded'}
+              </div>
+              <div style={{ fontSize: '12px' }}>
+                {mapError || (mapData.ships.length + mapData.containers.length === 0
+                  ? 'Add vessels or containers to see them here.'
+                  : 'The stored records do not include any vessel GPS positions yet.')}
+              </div>
+              {mapError && <button onClick={fetchMapData} className="btn btn-secondary btn-sm" style={{ marginTop: '10px' }}>Retry</button>}
             </div>
           )}
 
@@ -855,15 +753,12 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} /> Critical / On Hold
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ fontSize: '13px' }}>🚢</span> AIS Vessel
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ fontSize: '13px' }}>⚓</span> Port Terminal
+                <span style={{ fontSize: '13px' }}>🚢</span> Positioned vessel
               </span>
             </div>
 
             <div style={{ fontSize: '11px', color: '#0284c7', fontWeight: 600 }}>
-              Click any marker to inspect telemetry and audit trail
+              {mapData.ships.filter(ship => ship.coordinates).length} positioned vessels; {mapData.containers.filter(container => Number.isFinite(container.lat) && Number.isFinite(container.lng)).length} positioned containers
             </div>
           </div>
         </div>
@@ -920,12 +815,12 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
                   alignItems: 'center'
                 }}>
                   <div>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Live Cold-Chain Probe</div>
+                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Recorded Reefer Reading</div>
                     <div style={{ fontSize: '24px', fontWeight: 800, color: selectedItem.data.temperatureCelsius > -10 ? '#b91c1c' : '#0369a1' }}>
-                      {selectedItem.data.temperatureCelsius}°C
+                      {selectedItem.data.temperatureCelsius ?? 'Not recorded'}{selectedItem.data.temperatureCelsius != null ? '°C' : ''}
                     </div>
                     <div style={{ fontSize: '11px', color: '#64748b' }}>
-                      Target: <strong>{selectedItem.data.targetTemperature || -20}°C</strong>
+                      Target: <strong>{selectedItem.data.targetTemperature ?? 'Not recorded'}{selectedItem.data.targetTemperature != null ? '°C' : ''}</strong>
                     </div>
                   </div>
 
@@ -938,10 +833,10 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
                       fontSize: '11px',
                       fontWeight: 800
                     }}>
-                      {selectedItem.data.reeferStatus || 'Normal'}
+                      {selectedItem.data.reeferStatus || 'Not recorded'}
                     </span>
                     <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-                      Power: {selectedItem.data.powerStatus || 'Grid'}
+                      Power: {selectedItem.data.powerStatus || 'Not recorded'}
                     </div>
                   </div>
                 </div>
@@ -974,7 +869,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid #f1f5f9' }}>
                   <span style={{ color: '#64748b' }}>Security Bolt Seal:</span>
                   <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>
-                    {selectedItem.data.sealNumber} ({selectedItem.data.sealStatus})
+                    {selectedItem.data.sealNumber || 'Not recorded'}
                   </code>
                 </div>
 
@@ -990,6 +885,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
               <div style={{ marginTop: '18px', display: 'flex', gap: '8px' }}>
                 <button
                   onClick={() => handleFlyTo(selectedItem.data.lat, selectedItem.data.lng, 14)}
+                  disabled={!Number.isFinite(selectedItem.data.lat) || !Number.isFinite(selectedItem.data.lng)}
                   className="btn btn-secondary btn-sm"
                   style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                 >
@@ -1009,7 +905,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
                 <div>
                   <span style={{ fontSize: '11px', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    VESSEL AIS TELEMETRY
+                    RECORDED VESSEL POSITION
                   </span>
                   <h3 style={{ margin: '2px 0 0 0', fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>
                     {selectedItem.data.name}
@@ -1048,7 +944,11 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid #f1f5f9' }}>
                   <span style={{ color: '#64748b' }}>Speed & Heading:</span>
-                  <strong>{selectedItem.data.coordinates?.speedKnots || 18} kts ({selectedItem.data.coordinates?.heading || 312}°)</strong>
+                  <strong>
+                    {selectedItem.data.coordinates?.speedKnots ?? 'Speed not recorded'}
+                    {selectedItem.data.coordinates?.speedKnots != null ? ' kts' : ''}
+                    {selectedItem.data.coordinates?.heading != null ? ` (${selectedItem.data.coordinates.heading}°)` : ''}
+                  </strong>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid #f1f5f9' }}>
@@ -1060,6 +960,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
               <div style={{ marginTop: '18px' }}>
                 <button
                   onClick={() => handleFlyTo(selectedItem.data.coordinates?.lat, selectedItem.data.coordinates?.lng, 10)}
+                  disabled={!Number.isFinite(selectedItem.data.coordinates?.lat) || !Number.isFinite(selectedItem.data.coordinates?.lng)}
                   className="btn btn-secondary btn-sm"
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                 >
@@ -1119,7 +1020,7 @@ export const LiveTrackingPage = ({ onSelectShip }) => {
                     <strong style={{ fontSize: '12px', fontFamily: 'monospace', color: '#0f172a' }}>{c.containerId}</strong>
                     <div style={{ fontSize: '11px', color: '#64748b' }}>{c.cargoDescription}</div>
                   </div>
-                  {c.isReefer && c.temperatureCelsius !== null ? (
+                  {c.isReefer && c.temperatureCelsius != null ? (
                     <span style={{ fontSize: '11px', fontWeight: 800, color: c.temperatureCelsius > -10 ? '#b91c1c' : '#0369a1' }}>
                       {c.temperatureCelsius}°C
                     </span>

@@ -23,6 +23,7 @@ const analyticsRoutes = require('./routes/analytics');
 const temperatureRoutes = require('./routes/temperature');
 
 const { seedDatabase } = require('./services/seedDataService');
+const { requireAuth, requireRole } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -75,7 +76,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // Force Database Re-seed endpoint (Admin demo convenience)
-app.post('/api/system/reseed', async (req, res) => {
+app.post('/api/system/reseed', requireAuth, requireRole('admin'), async (req, res) => {
+  if (process.env.ENABLE_DEMO_SEEDING !== 'true') {
+    return res.status(403).json({ error: 'Demo seeding is disabled' });
+  }
+
   try {
     delete require.cache[require.resolve('./services/seedDataService')];
     const { seedDatabase } = require('./services/seedDataService');
@@ -104,8 +109,11 @@ async function connectMongoDB() {
     });
     console.log(`✅ Successfully connected to MongoDB Atlas Database: "${mongoose.connection.name}"`);
     
-    // Auto seed on startup if database is empty
-    await seedDatabase(false);
+    if (process.env.ENABLE_DEMO_SEEDING === 'true') {
+      await seedDatabase(false);
+    } else {
+      console.log('Automatic demo seeding is disabled.');
+    }
   } catch (error) {
     console.error('❌ MongoDB Atlas Connection Error:', error.message);
     console.log('🔄 Retrying MongoDB connection in 5 seconds...');

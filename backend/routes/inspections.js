@@ -147,7 +147,17 @@ router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res
       inspectorName: req.user.name,
       port: port || req.user.assignedPort || container.currentLocation || 'Port Terminal',
       inspectionType,
-      status: status || (result === 'Passed' ? 'Passed' : result === 'Failed' ? 'Failed' : 'Submitted'),
+      status: status || ({
+        Passed: 'Passed',
+        Failed: 'Failed',
+        'Requires Re-inspection': 'Re-inspection Required',
+        'Flagged for Quarantine': 'On Hold',
+        'On Hold': 'On Hold',
+        'Repair Required': 'Repair Required',
+        'In Progress': 'In Progress',
+        Assigned: 'Assigned',
+        Submitted: 'Submitted'
+      }[result] || 'Submitted'),
       result,
       expectedSealNumber: expSeal,
       physicalSealNumber: physSeal,

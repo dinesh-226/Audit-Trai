@@ -38,16 +38,16 @@ const ReportSchema = new mongoose.Schema({
     totalShips: { type: Number, default: 0 },
     anomaliesFound: { type: Number, default: 0 },
     highRiskContainers: { type: Number, default: 0 },
-    integrityVerified: { type: Boolean, default: true }
+    integrityVerified: { type: Boolean, default: false }
   },
   integrityStatus: {
     type: String,
     enum: ['VERIFIED', 'COMPROMISED', 'PENDING'],
-    default: 'VERIFIED'
+    default: 'PENDING'
   },
   tamperCheckDetails: {
     type: String,
-    default: 'All SHA-256 blocks chained and verified'
+    default: 'Not verified'
   },
   dataSnapshot: {
     type: mongoose.Schema.Types.Mixed,
