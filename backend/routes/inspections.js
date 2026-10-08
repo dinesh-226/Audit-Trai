@@ -8,6 +8,7 @@ const Evidence = require('../models/Evidence');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { createAuditLog } = require('../services/auditEngine');
 const { calculateContainerRisk } = require('../services/riskAnalysisEngine');
+const { resolveGeoCoordinates } = require('../utils/geoCoordinates');
 
 // 1. List Inspections with advanced filters
 router.get('/', async (req, res) => {
@@ -131,13 +132,16 @@ router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res
       const hash = p.fileHashSha256 || crypto.createHash('sha256').update(`${inspectionId}-${p.fileName || 'photo'}-${Date.now()}-${idx}`).digest('hex');
       return {
         photoId: p.photoId || `PHT-${Date.now()}-${idx}`,
-        fileName: p.fileName || `defect-evidence-${idx + 1}.jpg`,
-        fileUrl: p.fileUrl || '/assets/cargo-seal.jpg',
+        fileName: p.fileName || `inspection-evidence-${idx + 1}.jpg`,
+        fileUrl: p.fileUrl || 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80',
         fileHashSha256: hash,
         capturedAt: p.capturedAt ? new Date(p.capturedAt) : new Date(),
-        caption: p.caption || 'Physical inspection defect photograph'
+        caption: p.caption || 'Physical container inspection proof photograph'
       };
     });
+
+    const targetPort = port || req.user.assignedPort || container.currentLocation || 'Mumbai Port';
+    const computedGps = gpsLocation || resolveGeoCoordinates(targetPort, 'Port Terminal', container.containerId);
 
     const inspection = new Inspection({
       inspectionId,
@@ -145,7 +149,7 @@ router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res
       shipId: shipId || container.assignedShipId,
       inspectorId: req.user.userId,
       inspectorName: req.user.name,
-      port: port || req.user.assignedPort || container.currentLocation || 'Port Terminal',
+      port: targetPort,
       inspectionType,
       status: status || ({
         Passed: 'Passed',
@@ -170,7 +174,7 @@ router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res
       notes: notes || '',
       evidenceIds: evidenceIds || [],
       photographs: processedPhotos,
-      gpsLocation: gpsLocation || { lat: 18.94, lng: 72.83 },
+      gpsLocation: { lat: computedGps.lat, lng: computedGps.lng },
       deviceInfo: deviceInfo || 'Rugged Port Inspector Terminal (v2.4)'
     });
 

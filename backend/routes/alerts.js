@@ -24,18 +24,57 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Mark single alert as read
+// Mark all alerts as read (support POST and PATCH)
+router.post('/mark-all-read', requireAuth, async (req, res) => {
+  try {
+    await Alert.updateMany({ isRead: false }, { $set: { isRead: true } });
+    const unreadCount = await Alert.countDocuments({ isRead: false });
+    res.json({ message: 'All notifications marked as read', unreadCount: 0 });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to mark all alerts as read' });
+  }
+});
+
+router.patch('/mark-all-read', requireAuth, async (req, res) => {
+  try {
+    await Alert.updateMany({ isRead: false }, { $set: { isRead: true } });
+    const unreadCount = await Alert.countDocuments({ isRead: false });
+    res.json({ message: 'All notifications marked as read', unreadCount: 0 });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to mark all alerts as read' });
+  }
+});
+
+// Mark single alert as read (support PATCH and POST)
 router.patch('/:alertId/read', requireAuth, async (req, res) => {
   try {
     const alert = await Alert.findOneAndUpdate(
       { alertId: req.params.alertId },
-      { isRead: true },
+      { $set: { isRead: true } },
       { new: true }
     );
     if (!alert) {
       return res.status(404).json({ error: 'Alert not found' });
     }
-    res.json(alert);
+    const unreadCount = await Alert.countDocuments({ isRead: false });
+    res.json({ alert, unreadCount });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update alert' });
+  }
+});
+
+router.post('/:alertId/read', requireAuth, async (req, res) => {
+  try {
+    const alert = await Alert.findOneAndUpdate(
+      { alertId: req.params.alertId },
+      { $set: { isRead: true } },
+      { new: true }
+    );
+    if (!alert) {
+      return res.status(404).json({ error: 'Alert not found' });
+    }
+    const unreadCount = await Alert.countDocuments({ isRead: false });
+    res.json({ alert, unreadCount });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update alert' });
   }

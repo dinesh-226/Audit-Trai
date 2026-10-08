@@ -89,7 +89,7 @@ export const InspectorDashboard = ({ onNavigate }) => {
     fileName: 'seal-inspection-photo.jpg',
     category: 'Seal Photo',
     caption: 'High-security ISO 17712 bolt seal inspection proof',
-    fileUrl: '/assets/cargo-seal.jpg'
+    fileUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80'
   });
 
   const [actionLoading, setActionLoading] = useState(false);
@@ -145,27 +145,28 @@ export const InspectorDashboard = ({ onNavigate }) => {
 
   // Setup Workbench for a Container
   const handleSelectForWorkbench = (c) => {
+    const defaultStation = user?.assignedPort || c.currentLocation || 'Mumbai Port Customs Bay';
     setWorkbenchForm({
       containerId: c.containerId,
-      expectedSeal: c.sealNumber || 'SL-88910-SEC',
-      physicalSeal: c.sealNumber || 'SL-88910-SEC',
-      inspectionType: c.hazardClass && c.hazardClass !== 'Non-Hazardous' ? 'Dangerous Goods Compliance' : c.temperatureCelsius !== null ? 'Reefer Temp & Integrity' : 'Safety & Structural',
-      temperatureRecorded: c.temperatureCelsius !== null && c.temperatureCelsius !== undefined ? String(c.temperatureCelsius) : '',
+      expectedSeal: c.sealNumber || '',
+      physicalSeal: c.sealNumber || '',
+      inspectionType: c.hazardClass && c.hazardClass !== 'Non-Hazardous' ? 'Dangerous Goods Compliance' : (c.temperatureCelsius !== null && c.temperatureCelsius !== undefined) ? 'Reefer Temp & Integrity' : 'Safety & Structural',
+      temperatureRecorded: (c.temperatureCelsius !== null && c.temperatureCelsius !== undefined) ? String(c.temperatureCelsius) : '',
       overallResult: 'Passed',
       recommendation: 'Approve for Sea Loading',
-      notes: `Inspected at ${user?.assignedPort || 'Mumbai Customs Bay'}. Physical seal intact and verified.`,
+      notes: `Inspected at ${defaultStation}. Physical seal intact and verified.`,
       checklist: [
         { item: '1. Doors, Locks, Hinges & Rubber Gaskets', status: 'Pass', passed: true, comments: 'Gaskets airtight, locking bars operational', defectType: '', severity: null },
-        { item: '2. Left & Right Structural Walls / Panels', status: 'Pass', passed: true, comments: 'No major dents or deformation', defectType: '', severity: null },
+        { item: '2. Left & Right Structural Walls / Panels', status: 'Pass', passed: true, comments: 'No major dents or structural deformation', defectType: '', severity: null },
         { item: '3. Ceiling & Roof Sheets (Corrosion check)', status: 'Pass', passed: true, comments: 'Water-tight seal verified', defectType: '', severity: null },
         { item: '4. Wooden / Steel Floor & Crossmembers', status: 'Pass', passed: true, comments: 'Clean, oil-free, no broken floorboards', defectType: '', severity: null },
         { item: '5. Corner Castings & Twistlock Apertures', status: 'Pass', passed: true, comments: 'ISO 1161 corner castings intact', defectType: '', severity: null },
         { item: '6. Dangerous Goods Hazard Labels & IMDG Placards', status: c.hazardClass && c.hazardClass !== 'Non-Hazardous' ? 'Pass' : 'N/A', passed: true, comments: c.hazardClass || 'Non-Hazardous', defectType: '', severity: null },
-        { item: '7. Cold-Chain Machinery & Reefer Cables', status: c.temperatureCelsius !== null ? 'Pass' : 'N/A', passed: true, comments: c.temperatureCelsius !== null ? `${c.temperatureCelsius}°C Reefer OK` : 'Ambient Dry Cargo', defectType: '', severity: null }
+        { item: '7. Cold-Chain Machinery & Reefer Cables', status: (c.temperatureCelsius !== null && c.temperatureCelsius !== undefined) ? 'Pass' : 'N/A', passed: true, comments: (c.temperatureCelsius !== null && c.temperatureCelsius !== undefined) ? `${c.temperatureCelsius}°C Reefer OK` : 'Ambient Dry Cargo', defectType: '', severity: null }
       ],
       defects: [],
       photos: [
-        { fileName: `${c.containerId}-seal-proof.jpg`, caption: 'Physical bolt seal verification photograph' }
+        { fileName: `${c.containerId}-seal-proof.jpg`, fileUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80', caption: 'Physical bolt seal verification photograph' }
       ]
     });
     setActiveTab('workbench');
@@ -206,10 +207,12 @@ export const InspectorDashboard = ({ onNavigate }) => {
     }
     setActionLoading(true);
     try {
-      const sealMatch = workbenchForm.expectedSeal.trim().toUpperCase() === workbenchForm.physicalSeal.trim().toUpperCase();
+      const sealMatch = workbenchForm.expectedSeal && workbenchForm.physicalSeal
+        ? workbenchForm.expectedSeal.trim().toUpperCase() === workbenchForm.physicalSeal.trim().toUpperCase()
+        : true;
       const res = await api.inspections.create({
         containerId: workbenchForm.containerId,
-        port: user?.assignedPort || 'Mumbai Customs Bay',
+        port: user?.assignedPort || 'Mumbai Port Customs Bay',
         inspectionType: workbenchForm.inspectionType,
         result: workbenchForm.overallResult,
         expectedSealNumber: workbenchForm.expectedSeal,
@@ -221,8 +224,7 @@ export const InspectorDashboard = ({ onNavigate }) => {
         recommendation: workbenchForm.recommendation,
         notes: workbenchForm.notes,
         photographs: workbenchForm.photos,
-        deviceInfo: 'Inspector Rugged Tablet Pro #04',
-        gpsLocation: { lat: 18.94, lng: 72.83 }
+        deviceInfo: `${user?.name || 'Inspector'} Field Terminal (Rugged OS)`
       });
 
       showNotice(res.message || 'Inspection submitted and recorded in audit trail');
@@ -389,10 +391,10 @@ export const InspectorDashboard = ({ onNavigate }) => {
             <CheckCircle size={16} color="#10b981" />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a' }}>
-            {stats?.passed || inspections.filter(i => i.result === 'Passed').length || 18} Passed
+            {stats?.passed ?? inspections.filter(i => i.result === 'Passed' || i.status === 'Passed').length} Passed
           </div>
           <div style={{ fontSize: '11px', color: '#10b981', marginTop: '2px', fontWeight: 600 }}>
-            Pass Rate: {stats?.passRate || '96%'}
+            Pass Rate: {stats?.passRate || (inspections.length > 0 ? `${Math.round(((stats?.passed ?? inspections.filter(i => i.result === 'Passed' || i.status === 'Passed').length) / inspections.length) * 100)}%` : '100%')}
           </div>
         </div>
 
@@ -431,7 +433,7 @@ export const InspectorDashboard = ({ onNavigate }) => {
             <RotateCcw size={16} color="#7c3aed" />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a' }}>
-            {reinspectionList.length || 1} Pending
+            {reinspectionList.length} Pending
           </div>
           <div style={{ fontSize: '11px', color: '#7c3aed', marginTop: '2px', fontWeight: 600 }}>
             Scheduled Follow-ups
@@ -445,7 +447,7 @@ export const InspectorDashboard = ({ onNavigate }) => {
             <Camera size={16} color="#0f3460" />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a' }}>
-            {evidenceList.length || 8} Photos
+            {evidenceList.length} Photos
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
             SHA-256 Hash Sealed
@@ -1003,7 +1005,7 @@ export const InspectorDashboard = ({ onNavigate }) => {
                       SHA-256: {ev.fileHashSha256 ? `${ev.fileHashSha256.substring(0, 24)}...` : 'HASH-SEALED'}
                     </div>
                     <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
-                      Inspector: {ev.uploadedBy} &bull; GPS: 18.94°N, 72.83°E
+                      Inspector: {ev.uploadedBy || user?.name || 'Authorized Officer'} &bull; {ev.fileType || 'Evidence Doc'} &bull; {ev.fileSize ? `${Math.round(ev.fileSize / 1024)} KB` : 'Secured'}
                     </div>
                   </div>
                 </div>
@@ -1185,7 +1187,7 @@ export const InspectorDashboard = ({ onNavigate }) => {
               </div>
 
               <div style={{ fontSize: '11px', color: '#64748b' }}>
-                Upon upload, this image will automatically be timestamped, geo-tagged at 18.94°N 72.83°E, stamped with your inspector identity, and sealed with a SHA-256 cryptographic hash.
+                Upon upload, this inspection proof will automatically be stamped with your officer credentials, logged to the blockchain audit trail, and sealed with a SHA-256 cryptographic hash.
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>

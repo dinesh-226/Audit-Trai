@@ -478,7 +478,7 @@ router.post('/loading-action', requireAuth, requireRole('admin', 'port_manager')
 });
 
 // 7. Place Container on Hold / Quarantine (e.g. Failed inspection or discrepancy)
-router.post('/hold-container', requireAuth, requireRole('admin', 'port_manager'), async (req, res) => {
+router.post('/hold-container', requireAuth, requireRole('admin', 'port_manager', 'inspector'), async (req, res) => {
   try {
     const { containerId, reason, port = 'Mumbai Port', notes } = req.body;
 
@@ -494,7 +494,7 @@ router.post('/hold-container', requireAuth, requireRole('admin', 'port_manager')
     container.riskLevel = 'High';
     container.riskScore = Math.max(container.riskScore || 0, 75);
     if (!container.riskReasons) container.riskReasons = [];
-    container.riskReasons.push(`Port Hold: ${reason || 'Quarantine hold applied by Port Manager'}`);
+    container.riskReasons.push(`Quarantine Hold: ${reason || 'Hold applied by Customs Inspector'}`);
 
     const milestone = {
       stage: 'FLAGGED',
@@ -503,23 +503,24 @@ router.post('/hold-container', requireAuth, requireRole('admin', 'port_manager')
       timestamp: new Date(),
       performedBy: req.user.name,
       userRole: req.user.role,
-      notes: notes || `Placed on hold: ${reason}`
+      notes: notes || `Placed on quarantine hold: ${reason}`
     };
 
     container.journeyMilestones.push(milestone);
     await container.save();
 
-    // Create Alert for Inspector & Admin
+    // Create Alert for Port Manager & Admin
     const alertId = `ALT-HOLD-${Date.now()}`;
+    const roleTitle = req.user.role === 'inspector' ? 'Customs Inspector' : req.user.role === 'admin' ? 'Administrator' : 'Port Manager';
     await Alert.create({
       alertId,
       title: `Container Placed on Quarantine Hold: ${container.containerId}`,
-      message: `Port Manager ${req.user.name} placed ${container.containerId} on hold. Reason: ${reason}`,
+      message: `${roleTitle} ${req.user.name} placed ${container.containerId} on quarantine hold. Reason: ${reason}`,
       severity: 'high',
       category: 'inspection_failed',
       entityType: 'Container',
       entityId: container.containerId,
-      metadata: { port, reason, holdBy: req.user.name }
+      metadata: { port, reason, holdBy: req.user.name, role: req.user.role }
     });
 
     // Create Audit Log
@@ -532,7 +533,7 @@ router.post('/hold-container', requireAuth, requireRole('admin', 'port_manager')
       entityId: container.containerId,
       containerId: container.containerId,
       location: container.currentLocation,
-      newValue: { status: 'Flagged', holdReason: reason }
+      newValue: { status: 'Flagged', holdReason: reason, appliedByRole: req.user.role }
     });
 
     res.json({
@@ -547,7 +548,7 @@ router.post('/hold-container', requireAuth, requireRole('admin', 'port_manager')
 });
 
 // 8. Record Operational Delay or Exception
-router.post('/delay', requireAuth, requireRole('admin', 'port_manager'), async (req, res) => {
+router.post('/delay', requireAuth, requireRole('admin', 'port_manager', 'inspector'), async (req, res) => {
   try {
     const { entityType, entityId, delayReason, estimatedDelayHours = 4, notes, port = 'Mumbai Port' } = req.body;
 

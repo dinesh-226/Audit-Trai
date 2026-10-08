@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { X, Ship, Anchor, MapPin, Navigation } from 'lucide-react';
 
 export const ShipModal = ({ ship, onClose, onSaved }) => {
+  const [position, setPosition] = useState({ lat: '', lng: '' });
   const [formData, setFormData] = useState({
     name: '',
     imoNumber: '',
@@ -19,6 +20,10 @@ export const ShipModal = ({ ship, onClose, onSaved }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    setPosition({
+      lat: ship?.coordinates?.lat != null ? String(ship.coordinates.lat) : '',
+      lng: ship?.coordinates?.lng != null ? String(ship.coordinates.lng) : ''
+    });
     if (ship) {
       setFormData({
         name: ship.name || '',
@@ -37,14 +42,33 @@ export const ShipModal = ({ ship, onClose, onSaved }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const hasLatitude = position.lat.trim() !== '';
+    const hasLongitude = position.lng.trim() !== '';
+    if (hasLatitude !== hasLongitude) {
+      setError('Enter both latitude and longitude, or leave both blank.');
+      return;
+    }
+    if (hasLatitude) {
+      const latitude = Number(position.lat);
+      const longitude = Number(position.lng);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+          !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        setError('Enter a valid GPS latitude (-90 to 90) and longitude (-180 to 180).');
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
 
     try {
+      const payload = hasLatitude
+        ? { ...formData, coordinates: { lat: Number(position.lat), lng: Number(position.lng) } }
+        : formData;
       if (ship) {
-        await api.ships.update(ship.shipId, formData);
+        await api.ships.update(ship.shipId, payload);
       } else {
-        await api.ships.create(formData);
+        await api.ships.create(payload);
       }
       if (onSaved) onSaved();
       onClose();
@@ -207,6 +231,39 @@ export const ShipModal = ({ ship, onClose, onSaved }) => {
                 <option value="Under Inspection">Under Inspection</option>
                 <option value="Maintenance">Maintenance</option>
               </select>
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+              Vessel GPS Position (optional)
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <input
+                type="number"
+                step="any"
+                min="-90"
+                max="90"
+                className="input-control"
+                aria-label="GPS latitude"
+                placeholder="Latitude (-90 to 90)"
+                value={position.lat}
+                onChange={(e) => setPosition(current => ({ ...current, lat: e.target.value }))}
+              />
+              <input
+                type="number"
+                step="any"
+                min="-180"
+                max="180"
+                className="input-control"
+                aria-label="GPS longitude"
+                placeholder="Longitude (-180 to 180)"
+                value={position.lng}
+                onChange={(e) => setPosition(current => ({ ...current, lng: e.target.value }))}
+              />
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Only enter coordinates from a verified vessel position source.
             </div>
           </div>
 

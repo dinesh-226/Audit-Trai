@@ -17,7 +17,7 @@ import {
   X
 } from 'lucide-react';
 
-export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenContainerModal }) => {
+export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenContainerModal, refreshKey }) => {
   const { hasRole } = useAuth();
   const [containers, setContainers] = useState([]);
   const [ships, setShips] = useState([]);
@@ -33,7 +33,7 @@ export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenContai
   useEffect(() => {
     fetchContainers();
     fetchShips();
-  }, [statusFilter, riskFilter]);
+  }, [statusFilter, riskFilter, refreshKey]);
 
   const fetchContainers = async () => {
     setLoading(true);
@@ -295,6 +295,17 @@ export const ContainersPage = ({ onSelectContainer, onOpenTimeline, onOpenContai
                         >
                           <Clock size={13} />
                         </button>
+
+                        {hasRole('admin', 'port_manager', 'ship_manager') && (
+                          <button
+                            onClick={() => onOpenContainerModal(c)}
+                            title="Edit container details and GPS position"
+                            className="btn btn-outline btn-sm"
+                          >
+                            <Edit2 size={13} />
+                            <span>Edit</span>
+                          </button>
+                        )}
 
                         {hasRole('admin', 'port_manager', 'ship_manager', 'inspector') && (
                           <button

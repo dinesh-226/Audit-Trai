@@ -5,6 +5,7 @@ const Container = require('../models/Container');
 const AuditLog = require('../models/AuditLog');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { createAuditLog } = require('../services/auditEngine');
+const { resolveGeoCoordinates } = require('../utils/geoCoordinates');
 
 // List Ships with search & filter
 router.get('/', async (req, res) => {
@@ -75,14 +76,30 @@ router.get('/:shipId', async (req, res) => {
 // Create Ship (Admin or Ship Manager)
 router.post('/', requireAuth, requireRole('admin', 'ship_manager'), async (req, res) => {
   try {
-    const { name, imoNumber, type, capacityTEU, currentLocation, destination, departurePort, arrivalPort, captain, flag } = req.body;
+    const { name, imoNumber, type, capacityTEU, currentLocation, destination, departurePort, arrivalPort, captain, flag, coordinates } = req.body;
     
     if (!name || !imoNumber || !capacityTEU) {
       return res.status(400).json({ error: 'Ship name, IMO number, and TEU capacity are required' });
     }
 
+    if (coordinates && (!Number.isFinite(Number(coordinates.lat)) || Number(coordinates.lat) < -90 || Number(coordinates.lat) > 90 ||
+      !Number.isFinite(Number(coordinates.lng)) || Number(coordinates.lng) < -180 || Number(coordinates.lng) > 180)) {
+      return res.status(400).json({ error: 'Valid latitude and longitude are required for a vessel GPS position' });
+    }
+
     const count = await Ship.countDocuments();
     const shipId = `SH-${String(count + 101)}`;
+
+    const hasValidCoords = coordinates &&
+      Number.isFinite(Number(coordinates.lat)) &&
+      Number.isFinite(Number(coordinates.lng)) &&
+      !(Number(coordinates.lat) === 0 && Number(coordinates.lng) === 0);
+
+    const resolvedCoords = hasValidCoords ? {
+      lat: Number(coordinates.lat),
+      lng: Number(coordinates.lng),
+      lastUpdated: new Date()
+    } : resolveGeoCoordinates(currentLocation || departurePort, `${departurePort || ''} ${arrivalPort || ''}`, shipId);
 
     const ship = new Ship({
       shipId,
@@ -96,6 +113,7 @@ router.post('/', requireAuth, requireRole('admin', 'ship_manager'), async (req, 
       arrivalPort: arrivalPort || destination || 'Mumbai Port',
       captain: captain || 'Capt. Unassigned',
       flag: flag || 'Panama',
+      coordinates: resolvedCoords,
       status: 'Docked'
     });
 
@@ -136,7 +154,16 @@ router.put('/:shipId', requireAuth, requireRole('admin', 'ship_manager', 'port_m
       captain: ship.captain
     };
 
-    Object.assign(ship, req.body);
+    const updateData = { ...req.body };
+    if (updateData.coordinates) {
+      const { lat, lng } = updateData.coordinates;
+      if (!Number.isFinite(Number(lat)) || Number(lat) < -90 || Number(lat) > 90 ||
+        !Number.isFinite(Number(lng)) || Number(lng) < -180 || Number(lng) > 180) {
+        return res.status(400).json({ error: 'Valid latitude and longitude are required for a vessel GPS position' });
+      }
+      updateData.coordinates = { ...updateData.coordinates, lat: Number(lat), lng: Number(lng), lastUpdated: new Date() };
+    }
+    Object.assign(ship, updateData);
     await ship.save();
 
     await createAuditLog({

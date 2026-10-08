@@ -15,7 +15,7 @@ import {
   Clock
 } from 'lucide-react';
 
-export const ShipsPage = ({ onSelectShip, onOpenShipModal, onNavigate }) => {
+export const ShipsPage = ({ onSelectShip, onOpenShipModal, onNavigate, refreshKey }) => {
   const { hasRole } = useAuth();
   const [ships, setShips] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,7 @@ export const ShipsPage = ({ onSelectShip, onOpenShipModal, onNavigate }) => {
 
   useEffect(() => {
     fetchShips();
-  }, [statusFilter]);
+  }, [statusFilter, refreshKey]);
 
   const fetchShips = async () => {
     setLoading(true);

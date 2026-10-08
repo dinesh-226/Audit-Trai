@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { X, Box, Shield, Tag, AlertTriangle, Snowflake } from 'lucide-react';
 
 export const ContainerModal = ({ container, ships = [], onClose, onSaved }) => {
+  const [position, setPosition] = useState({ lat: '', lng: '' });
   const [formData, setFormData] = useState({
     containerId: '',
     type: 'Dry 40ft',
@@ -14,6 +15,7 @@ export const ContainerModal = ({ container, ships = [], onClose, onSaved }) => {
     currentLocation: 'Singapore Port Terminal 1',
     assignedShipId: '',
     ownerCompany: 'Apex Global Logistics',
+    status: 'Booked',
     sealNumber: '',
     hazardClass: 'Non-Hazardous',
     temperatureCelsius: ''
@@ -23,6 +25,10 @@ export const ContainerModal = ({ container, ships = [], onClose, onSaved }) => {
 
   useEffect(() => {
     if (container) {
+      setPosition({
+        lat: container.coordinates?.lat != null ? String(container.coordinates.lat) : '',
+        lng: container.coordinates?.lng != null ? String(container.coordinates.lng) : ''
+      });
       setFormData({
         containerId: container.containerId || '',
         type: container.type || 'Dry 40ft',
@@ -34,11 +40,13 @@ export const ContainerModal = ({ container, ships = [], onClose, onSaved }) => {
         currentLocation: container.currentLocation || '',
         assignedShipId: container.assignedShipId || '',
         ownerCompany: container.ownerCompany || '',
+        status: container.status || 'Booked',
         sealNumber: container.sealNumber || '',
         hazardClass: container.hazardClass || 'Non-Hazardous',
         temperatureCelsius: container.temperatureCelsius !== null && container.temperatureCelsius !== undefined ? container.temperatureCelsius : ''
       });
     } else {
+      setPosition({ lat: '', lng: '' });
       // Auto-generate realistic container code
       const prefixes = ['MSCU', 'CMAU', 'MAEU', 'HLCU', 'COSCO'];
       const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
@@ -53,6 +61,21 @@ export const ContainerModal = ({ container, ships = [], onClose, onSaved }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const hasLatitude = position.lat.trim() !== '';
+    const hasLongitude = position.lng.trim() !== '';
+    if (hasLatitude !== hasLongitude) {
+      setError('Enter both latitude and longitude, or leave both blank.');
+      return;
+    }
+    if (hasLatitude) {
+      const latitude = Number(position.lat);
+      const longitude = Number(position.lng);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+          !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        setError('Enter a valid GPS latitude (-90 to 90) and longitude (-180 to 180).');
+        return;
+      }
+    }
     setLoading(true);
     setError(null);
 
@@ -61,7 +84,9 @@ export const ContainerModal = ({ container, ships = [], onClose, onSaved }) => {
         ...formData,
         weightKg: Number(formData.weightKg),
         temperatureCelsius: formData.temperatureCelsius !== '' ? Number(formData.temperatureCelsius) : null,
-        assignedShipId: formData.assignedShipId || null
+        assignedShipId: formData.assignedShipId || null,
+        location: formData.currentLocation,
+        coordinates: hasLatitude ? { lat: Number(position.lat), lng: Number(position.lng) } : undefined
       };
 
       if (container) {
@@ -295,6 +320,39 @@ export const ContainerModal = ({ container, ships = [], onClose, onSaved }) => {
                 onChange={(e) => setFormData({ ...formData, temperatureCelsius: e.target.value })}
                 placeholder="e.g. -18.5 (Leave blank if dry)"
               />
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+              Container GPS Position (optional)
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <input
+                type="number"
+                step="any"
+                min="-90"
+                max="90"
+                className="input-control"
+                aria-label="Container GPS latitude"
+                placeholder="Latitude (-90 to 90)"
+                value={position.lat}
+                onChange={(e) => setPosition(current => ({ ...current, lat: e.target.value }))}
+              />
+              <input
+                type="number"
+                step="any"
+                min="-180"
+                max="180"
+                className="input-control"
+                aria-label="Container GPS longitude"
+                placeholder="Longitude (-180 to 180)"
+                value={position.lng}
+                onChange={(e) => setPosition(current => ({ ...current, lng: e.target.value }))}
+              />
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Use verified GPS coordinates for this container or yard position.
             </div>
           </div>
 

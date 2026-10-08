@@ -68,13 +68,25 @@ export const Navbar = ({ onOpenGlobalSearch, onOpenProfile, onSignOut }) => {
     }
   };
 
-  const handleMarkAllRead = async () => {
+  const handleMarkAllRead = async (e) => {
+    if (e) e.stopPropagation();
     try {
       await api.alerts.markAllRead();
       setUnreadCount(0);
       setAlerts(prev => prev.map(a => ({ ...a, isRead: true })));
     } catch (e) {
-      console.error(e);
+      console.error('Failed to mark all alerts as read:', e);
+    }
+  };
+
+  const handleMarkSingleRead = async (alertId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      await api.alerts.markRead(alertId);
+      setAlerts(prev => prev.map(a => a.alertId === alertId ? { ...a, isRead: true } : a));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (e) {
+      console.error('Failed to mark alert as read:', e);
     }
   };
 
@@ -269,15 +281,24 @@ export const Navbar = ({ onOpenGlobalSearch, onOpenProfile, onSignOut }) => {
               }}>
                 <div style={{ fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', color: '#0f3460' }}>
                   <Bell size={14} color="#0284c7" />
-                  <span>Notifications</span>
+                  <span>Notifications {unreadCount > 0 && `(${unreadCount})`}</span>
                 </div>
-                {unreadCount > 0 && (
+                {(unreadCount > 0 || alerts.some(a => !a.isRead)) && (
                   <button
                     onClick={handleMarkAllRead}
                     type="button"
-                    style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '11px', cursor: 'pointer', fontWeight: 700 }}
+                    style={{
+                      background: '#e0f2fe',
+                      border: '1px solid #bae6fd',
+                      color: '#0284c7',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '4px'
+                    }}
                   >
-                    Mark read
+                    Mark all read
                   </button>
                 )}
               </div>
@@ -291,22 +312,27 @@ export const Navbar = ({ onOpenGlobalSearch, onOpenProfile, onSignOut }) => {
                   alerts.map((alert) => (
                     <div
                       key={alert.alertId}
+                      onClick={() => !alert.isRead && handleMarkSingleRead(alert.alertId)}
                       style={{
                         padding: '10px 16px',
                         borderBottom: '1px solid #f1f5f9',
                         background: alert.isRead ? '#ffffff' : '#f0f9ff',
-                        fontSize: '12px'
+                        fontSize: '12px',
+                        cursor: alert.isRead ? 'default' : 'pointer',
+                        transition: 'background 0.15s ease'
                       }}
+                      title={alert.isRead ? 'Read' : 'Click to mark as read'}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                        <span style={{ fontWeight: 700, color: alert.severity === 'critical' ? '#dc2626' : '#0f3460' }}>
+                        <span style={{ fontWeight: alert.isRead ? 600 : 800, color: alert.severity === 'critical' ? '#dc2626' : '#0f3460', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {!alert.isRead && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0284c7', display: 'inline-block' }} />}
                           {alert.title}
                         </span>
                         <span style={{ fontSize: '10px', color: '#94a3b8' }}>
                           {new Date(alert.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <div style={{ color: '#475569', fontSize: '11px', lineHeight: '1.4' }}>
+                      <div style={{ color: alert.isRead ? '#64748b' : '#334155', fontSize: '11px', lineHeight: '1.4' }}>
                         {alert.message}
                       </div>
                     </div>

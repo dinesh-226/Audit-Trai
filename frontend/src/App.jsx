@@ -88,8 +88,11 @@ function MainApp() {
   const [showTamperModal, setShowTamperModal] = useState(false);
   const [editingShip, setEditingShip] = useState(null);
   const [showShipModal, setShowShipModal] = useState(false);
+  const [shipRefreshKey, setShipRefreshKey] = useState(0);
+  const [mapRefreshKey, setMapRefreshKey] = useState(0);
   const [editingContainer, setEditingContainer] = useState(null);
   const [showContainerModal, setShowContainerModal] = useState(false);
+  const [containerRefreshKey, setContainerRefreshKey] = useState(0);
   const [inspectionContainerId, setInspectionContainerId] = useState(null);
   const [showInspectionModal, setShowInspectionModal] = useState(false);
   const [inspectionRefreshKey, setInspectionRefreshKey] = useState(0);
@@ -315,6 +318,7 @@ function MainApp() {
           <ShipsPage
             onSelectShip={handleSelectShip}
             onOpenShipModal={handleOpenShipModal}
+            refreshKey={shipRefreshKey}
             onNavigate={(tab, id) => {
               if (tab === 'ship-timeline' && id) setSelectedShipId(id);
               if (tab === 'ship-detail' && id) setSelectedShipId(id);
@@ -342,6 +346,7 @@ function MainApp() {
             onSelectContainer={handleSelectContainer}
             onOpenTimeline={handleOpenTimeline}
             onOpenContainerModal={handleOpenContainerModal}
+            refreshKey={containerRefreshKey}
           />
         )}
 
@@ -363,7 +368,12 @@ function MainApp() {
         )}
 
         {activeTab === 'tracking' && (
-          <LiveTrackingPage onSelectShip={handleSelectShip} />
+          <LiveTrackingPage
+            onSelectShip={handleSelectShip}
+            onOpenShipModal={handleOpenShipModal}
+            onOpenContainerModal={handleOpenContainerModal}
+            refreshKey={mapRefreshKey}
+          />
         )}
 
         {activeTab === 'audit' && (
@@ -518,7 +528,8 @@ function MainApp() {
           ship={editingShip}
           onClose={() => setShowShipModal(false)}
           onSaved={() => {
-            // reloaded in ships page
+            setShipRefreshKey(key => key + 1);
+            setMapRefreshKey(key => key + 1);
           }}
         />
       )}
@@ -529,7 +540,8 @@ function MainApp() {
           container={editingContainer}
           onClose={() => setShowContainerModal(false)}
           onSaved={() => {
-            // reloaded in containers page
+            setContainerRefreshKey(key => key + 1);
+            setMapRefreshKey(key => key + 1);
           }}
         />
       )}

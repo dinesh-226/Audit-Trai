@@ -10,6 +10,7 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const { createAuditLog } = require('../services/auditEngine');
 const { evaluateActionForAnomalies } = require('../services/anomalyEngine');
 const { calculateContainerRisk } = require('../services/riskAnalysisEngine');
+const { resolveGeoCoordinates } = require('../utils/geoCoordinates');
 
 // List Containers with advanced filtering
 router.get('/', async (req, res) => {
@@ -152,11 +153,20 @@ router.post('/', requireAuth, requireRole('admin', 'port_manager', 'ship_manager
       ownerCompany,
       sealNumber,
       hazardClass,
-      temperatureCelsius
+      temperatureCelsius,
+      coordinates
     } = req.body;
 
     if (!containerId || !weightKg || !cargoDescription || !origin || !destination) {
       return res.status(400).json({ error: 'Container ID, cargo, weight, origin, and destination are required' });
+    }
+
+    if (coordinates != null && (
+      coordinates.lat === undefined || coordinates.lng === undefined ||
+      !Number.isFinite(Number(coordinates.lat)) || Number(coordinates.lat) < -90 || Number(coordinates.lat) > 90 ||
+      !Number.isFinite(Number(coordinates.lng)) || Number(coordinates.lng) < -180 || Number(coordinates.lng) > 180
+    )) {
+      return res.status(400).json({ error: 'Valid latitude and longitude are required for a container GPS position' });
     }
 
     const existing = await Container.findOne({ containerId: containerId.toUpperCase() });
@@ -182,6 +192,17 @@ router.post('/', requireAuth, requireRole('admin', 'port_manager', 'ship_manager
       notes: `Container booked for journey from ${origin} to ${destination}`
     };
 
+    const hasValidCoords = coordinates &&
+      Number.isFinite(Number(coordinates.lat)) &&
+      Number.isFinite(Number(coordinates.lng)) &&
+      !(Number(coordinates.lat) === 0 && Number(coordinates.lng) === 0);
+
+    const resolvedCoords = hasValidCoords ? {
+      lat: Number(coordinates.lat),
+      lng: Number(coordinates.lng),
+      lastUpdated: new Date()
+    } : resolveGeoCoordinates(currentLocation || origin || 'Singapore Port', `${origin || ''} ${destination || ''}`, containerId);
+
     const container = new Container({
       containerId: containerId.toUpperCase(),
       type: type || 'Dry 40ft',
@@ -191,6 +212,7 @@ router.post('/', requireAuth, requireRole('admin', 'port_manager', 'ship_manager
       origin,
       destination,
       currentLocation: currentLocation || origin || 'Port Terminal',
+      coordinates: resolvedCoords,
       assignedShipId: assignedShipId || null,
       assignedShipName: shipName,
       ownerCompany: ownerCompany || 'Global Freight Carrier',
@@ -243,7 +265,7 @@ router.post('/', requireAuth, requireRole('admin', 'port_manager', 'ship_manager
 // Update Container Status Transition
 router.patch('/:containerId/status', requireAuth, requireRole('admin', 'port_manager', 'ship_manager', 'inspector'), async (req, res) => {
   try {
-    const { status, location, notes, assignedShipId, temperatureCelsius, sealNumber } = req.body;
+    const { status, location, notes, assignedShipId, temperatureCelsius, sealNumber, coordinates } = req.body;
     const container = await Container.findOne({ containerId: req.params.containerId.toUpperCase() });
 
     if (!container) {
@@ -253,10 +275,25 @@ router.patch('/:containerId/status', requireAuth, requireRole('admin', 'port_man
     const previousStatus = container.status;
     const previousLocation = container.currentLocation;
 
-    container.status = status;
+    if (status) container.status = status;
     if (location) container.currentLocation = location;
     if (temperatureCelsius !== undefined) container.temperatureCelsius = temperatureCelsius;
     if (sealNumber) container.sealNumber = sealNumber;
+
+    if (coordinates != null) {
+      if (coordinates.lat === undefined || coordinates.lng === undefined ||
+        !Number.isFinite(Number(coordinates.lat)) || Number(coordinates.lat) < -90 || Number(coordinates.lat) > 90 ||
+        !Number.isFinite(Number(coordinates.lng)) || Number(coordinates.lng) < -180 || Number(coordinates.lng) > 180) {
+        return res.status(400).json({ error: 'Valid latitude and longitude are required for a container GPS position' });
+      }
+      container.coordinates = {
+        lat: Number(coordinates.lat),
+        lng: Number(coordinates.lng),
+        lastUpdated: new Date()
+      };
+    }
+
+    if (coordinates === null) container.coordinates = undefined;
 
     if (assignedShipId !== undefined) {
       container.assignedShipId = assignedShipId;
@@ -282,11 +319,11 @@ router.patch('/:containerId/status', requireAuth, requireRole('admin', 'port_man
       'Flagged': 'FLAGGED'
     };
 
-    const stage = stageMap[status] || 'IN TRANSIT';
+    const stage = stageMap[container.status] || 'IN TRANSIT';
 
     const newMilestone = {
       stage,
-      status,
+      status: container.status,
       location: container.currentLocation,
       timestamp: new Date(),
       performedBy: req.user.name,
@@ -300,11 +337,11 @@ router.patch('/:containerId/status', requireAuth, requireRole('admin', 'port_man
     await container.save();
 
     let action = 'CONTAINER_STATUS_CHANGED';
-    if (status === 'Loaded') action = 'CONTAINER_LOADED_ON_SHIP';
-    if (status === 'In Transit') action = 'CONTAINER_DEPARTED_AT_SEA';
-    if (status === 'Unloading') action = 'CARGO_UNLOADED';
-    if (status === 'Delivered') action = 'CONTAINER_DELIVERED';
-    if (status === 'Flagged') action = 'CONTAINER_FLAGGED_SECURITY';
+    if (container.status === 'Loaded') action = 'CONTAINER_LOADED_ON_SHIP';
+    if (container.status === 'In Transit') action = 'CONTAINER_DEPARTED_AT_SEA';
+    if (container.status === 'Unloading') action = 'CARGO_UNLOADED';
+    if (container.status === 'Delivered') action = 'CONTAINER_DELIVERED';
+    if (container.status === 'Flagged') action = 'CONTAINER_FLAGGED_SECURITY';
 
     // 1. Write Cryptographic Audit Log
     const audit = await createAuditLog({
@@ -333,7 +370,7 @@ router.patch('/:containerId/status', requireAuth, requireRole('admin', 'port_man
       user: req.user,
       action,
       previousStatus,
-      newStatus: status,
+      newStatus: container.status,
       newLocation: location,
       auditLog: audit
     });

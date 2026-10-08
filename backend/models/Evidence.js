@@ -48,7 +48,19 @@ const EvidenceSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['Inspection Photo', 'Bill of Lading', 'Customs Clearance', 'Report PDF', 'Damage Evidence', 'Seal Verification Photo', 'Weight Certificate'],
+    enum: [
+      'Inspection Photo',
+      'Bill of Lading',
+      'Customs Clearance',
+      'Report PDF',
+      'Damage Evidence',
+      'Seal Verification Photo',
+      'Weight Certificate',
+      'Seal Photo',
+      'Damage Photo',
+      'Customs Check',
+      'Reefer Temp'
+    ],
     default: 'Inspection Photo'
   },
   description: {

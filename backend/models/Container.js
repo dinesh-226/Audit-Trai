@@ -20,6 +20,12 @@ const MilestoneSchema = new mongoose.Schema({
   evidenceId: { type: String, default: null }
 }, { _id: false });
 
+const ContainerCoordinatesSchema = new mongoose.Schema({
+  lat: Number,
+  lng: Number,
+  lastUpdated: Date
+}, { _id: false });
+
 const ContainerSchema = new mongoose.Schema({
   containerId: {
     type: String,
@@ -56,6 +62,7 @@ const ContainerSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  coordinates: { type: ContainerCoordinatesSchema, default: undefined },
   assignedShipId: {
     type: String,
     default: null
