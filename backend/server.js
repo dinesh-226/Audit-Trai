@@ -29,13 +29,36 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middlewares
+const allowedOrigins = [
+  'https://audit-trai-3ks9.vercel.app',
+  'https://audit-trai.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000'
+];
+
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-demo-user', 'x-demo-role']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-demo-user', 'x-demo-role', 'x-requested-with', 'Accept']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serverless MongoDB Auto-Connect Middleware
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    await connectMongoDB();
+  }
+  next();
+});
 
 // Request logger debug helper
 app.use((req, res, next) => {
@@ -43,6 +66,19 @@ app.use((req, res, next) => {
     console.log(`[${new Date().toISOString().substring(11, 19)}] ${req.method} ${req.path}`);
   }
   next();
+});
+
+// Root API Info
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    system: 'AI-Powered Container Ship Audit Trail & Maritime Monitoring System',
+    version: '2.0.0',
+    backendUrl: 'https://audit-trai.vercel.app',
+    frontendUrl: 'https://audit-trai-3ks9.vercel.app',
+    health: 'https://audit-trai.vercel.app/api/health',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // API Routes
@@ -70,7 +106,7 @@ app.get('/api/health', (req, res) => {
     version: '2.0.0',
     timestamp: new Date().toISOString(),
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    databaseName: mongoose.connection.name || 'Trail',
+    databaseName: mongoose.connection.name || 'Audit_Trail',
     databaseHost: mongoose.connection.host || 'Atlas Cluster'
   });
 });
@@ -91,33 +127,32 @@ app.post('/api/system/reseed', requireAuth, requireRole('admin'), async (req, re
   }
 });
 
-// Start Express Server
-const server = app.listen(PORT, () => {
-  console.log(`🚀 ContainerShip Audit Trail Server running on http://localhost:${PORT}`);
-  console.log(`📊 API endpoints live at http://localhost:${PORT}/api/`);
-});
+// Start Express Server (only when run directly)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`🚀 ContainerShip Audit Trail Server running on http://localhost:${PORT}`);
+    console.log(`📊 API endpoints live at http://localhost:${PORT}/api/`);
+  });
+}
 
 // MongoDB Connection with Auto-Retry & Seed
 async function connectMongoDB() {
+  if (mongoose.connection.readyState === 1) return;
   const mongoUri = process.env.MONGO_URI || 'mongodb://dinesh:paurdinesh@ac-zlrzxsj-shard-00-00.qvm5csd.mongodb.net:27017,ac-zlrzxsj-shard-00-01.qvm5csd.mongodb.net:27017,ac-zlrzxsj-shard-00-02.qvm5csd.mongodb.net:27017/Trail?ssl=true&replicaSet=atlas-1197x8-shard-0&authSource=admin&retryWrites=true&w=majority';
   console.log(`📡 Connecting to MongoDB Atlas Database...`);
   
   try {
     await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 30000,
+      serverSelectionTimeoutMS: 15000,
       autoIndex: true
     });
     console.log(`✅ Successfully connected to MongoDB Atlas Database: "${mongoose.connection.name}"`);
     
     if (process.env.ENABLE_DEMO_SEEDING === 'true') {
       await seedDatabase(false);
-    } else {
-      console.log('Automatic demo seeding is disabled.');
     }
   } catch (error) {
     console.error('❌ MongoDB Atlas Connection Error:', error.message);
-    console.log('🔄 Retrying MongoDB connection in 5 seconds...');
-    setTimeout(connectMongoDB, 5000);
   }
 }
 
