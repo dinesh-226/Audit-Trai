@@ -39,7 +39,7 @@ import {
 export const ShipManagerDashboard = ({ onNavigate }) => {
   const { user } = useAuth();
   const [ships, setShips] = useState([]);
-  const [selectedShipId, setSelectedShipId] = useState(user?.assignedShipId || 'SH-8801');
+  const [selectedShipId, setSelectedShipId] = useState(user?.assignedShipId || 'SH-101');
   const [voyages, setVoyages] = useState([]);
   const [currentVoyage, setCurrentVoyage] = useState(null);
   const [containers, setContainers] = useState([]);
@@ -114,30 +114,49 @@ export const ShipManagerDashboard = ({ onNavigate }) => {
     setLoading(true);
     try {
       const [allShips, allContainers, allVoyages] = await Promise.all([
-        api.ships.getAll(),
-        api.containers.getAll(),
-        api.voyages.getAll()
+        api.ships.getAll().catch(() => []),
+        api.containers.getAll().catch(() => []),
+        api.voyages.getAll().catch(() => [])
       ]);
 
-      setShips(allShips || []);
-      setContainers(allContainers || []);
-      setVoyages(allVoyages || []);
+      const shipsList = Array.isArray(allShips) ? allShips : [];
+      const containersList = Array.isArray(allContainers) ? allContainers : [];
+      const voyagesList = Array.isArray(allVoyages) ? allVoyages : [];
 
-      // Find active voyage for selected ship
-      const shipVoyage = allVoyages?.find(v => v.shipId === selectedShipId) || allVoyages?.[0] || null;
+      setShips(shipsList);
+      setContainers(containersList);
+      setVoyages(voyagesList);
+
+      // Determine active ship
+      let currentShip = shipsList.find(s => s.shipId === selectedShipId);
+      if (!currentShip && shipsList.length > 0) {
+        currentShip = shipsList[0];
+        setSelectedShipId(currentShip.shipId);
+      }
+
+      // Robust matching of voyage by shipId, imoNumber, or shipName
+      const shipVoyage = voyagesList.find(v =>
+        v.shipId === selectedShipId ||
+        (currentShip && (
+          v.shipId === currentShip.shipId ||
+          v.imoNumber === currentShip.imoNumber ||
+          (v.shipName && currentShip.name && v.shipName.trim().toLowerCase() === currentShip.name.trim().toLowerCase())
+        ))
+      ) || null;
+
       setCurrentVoyage(shipVoyage);
 
       if (shipVoyage) {
         setEtaForm({
-          estimatedArrivalTime: new Date(shipVoyage.estimatedArrivalTime).toISOString().substring(0, 16),
+          estimatedArrivalTime: shipVoyage.estimatedArrivalTime ? new Date(shipVoyage.estimatedArrivalTime).toISOString().substring(0, 16) : '',
           reason: 'Schedule optimization',
           notes: ''
         });
         setTelemetryForm({
-          speedKnots: shipVoyage.speedKnots || 19.8,
-          headingDegrees: shipVoyage.headingDegrees || 312,
-          lat: shipVoyage.currentCoordinates?.lat || 14.82,
-          lng: shipVoyage.currentCoordinates?.lng || 74.15,
+          speedKnots: shipVoyage.speedKnots ?? (currentShip?.coordinates?.speedKnots || 18.5),
+          headingDegrees: shipVoyage.headingDegrees ?? (currentShip?.coordinates?.heading || 180),
+          lat: shipVoyage.currentCoordinates?.lat ?? (currentShip?.coordinates?.lat || 18.94),
+          lng: shipVoyage.currentCoordinates?.lng ?? (currentShip?.coordinates?.lng || 72.83),
           waveMeters: shipVoyage.seaConditions?.waveMeters || 1.8,
           windKnots: shipVoyage.seaConditions?.windKnots || 14,
           condition: shipVoyage.seaConditions?.condition || 'Fair Seas'
@@ -148,6 +167,8 @@ export const ShipManagerDashboard = ({ onNavigate }) => {
         } catch (e) {
           console.log('No performance profile yet');
         }
+      } else {
+        setPerformance(null);
       }
     } catch (e) {
       console.error('Failed to load ship manager data:', e);
@@ -157,18 +178,21 @@ export const ShipManagerDashboard = ({ onNavigate }) => {
   };
 
   const activeShip = ships.find(s => s.shipId === selectedShipId) || ships[0] || {
+    shipId: 'SH-101',
     name: 'MSC Irina',
-    imoNumber: 'IMO 9805467',
-    flag: 'Panama (PA)',
-    captain: 'Capt. Jonathan Vance',
+    imoNumber: 'IMO 9929429',
+    flag: 'Panama',
+    captain: 'Capt. Vikram Sengupta',
     capacityTEU: 24346,
     status: 'In Transit'
   };
 
   const onboardContainers = containers.filter(c =>
     c.assignedShipId === selectedShipId ||
-    c.assignedShipName === activeShip.name ||
-    (c.status === 'In Transit' && c.assignedShipName?.includes(activeShip.name))
+    (activeShip && (
+      c.assignedShipId === activeShip.shipId ||
+      (c.assignedShipName && activeShip.name && c.assignedShipName.trim().toLowerCase() === activeShip.name.trim().toLowerCase())
+    ))
   );
 
   // Filtered Cargo

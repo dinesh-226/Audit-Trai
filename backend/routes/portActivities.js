@@ -10,9 +10,9 @@ const { createAuditLog } = require('../services/auditEngine');
 
 // In-memory berth state cache to allow live dynamic updates during runtime
 let liveBerths = [
-  { berthId: 'Berth 01 (Quay North)', vessel: 'MSC Irina', imo: 'IMO 9805467', shipId: 'SH-8801', status: 'Docked & Unloading', cranesActive: 3, teuThroughput: '1,450 TEU', port: 'Mumbai Port' },
-  { berthId: 'Berth 02 (Quay South)', vessel: 'Ever Given', imo: 'IMO 9811000', shipId: 'SH-8802', status: 'Docked & Loading', cranesActive: 4, teuThroughput: '2,100 TEU', port: 'Mumbai Port' },
-  { berthId: 'Berth 03 (Feeder Terminal)', vessel: 'CMA CGM Jacques Saadé', imo: 'IMO 9839179', shipId: 'SH-8803', status: 'Scheduled Arrival (14:30)', cranesActive: 2, teuThroughput: '850 TEU', port: 'Mumbai Port' },
+  { berthId: 'Berth 01 (Quay North)', vessel: 'MSC Irina', imo: 'IMO 9929429', shipId: 'SH-101', status: 'Scheduled Arrival (18:00)', cranesActive: 3, teuThroughput: '1,450 TEU', port: 'Mumbai Port' },
+  { berthId: 'Berth 02 (Quay South)', vessel: 'Ever Ace', imo: 'IMO 9893890', shipId: 'SH-102', status: 'In Transit (Singapore)', cranesActive: 4, teuThroughput: '2,100 TEU', port: 'Mumbai Port' },
+  { berthId: 'Berth 03 (Feeder Terminal)', vessel: 'CMA CGM Jacques Saadé', imo: 'IMO 9839179', shipId: 'SH-103', status: 'Docked & Unloading', cranesActive: 2, teuThroughput: '850 TEU', port: 'Mumbai Port' },
   { berthId: 'Berth 04 (Bulk Yard)', vessel: 'Available / Open', imo: 'N/A', shipId: null, status: 'Ready for Berthing', cranesActive: 0, teuThroughput: '0 TEU', port: 'Mumbai Port' }
 ];
 

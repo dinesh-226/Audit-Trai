@@ -49,7 +49,7 @@ const VoyageSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Planned', 'In Transit', 'Delayed', 'Diverted', 'Arrived', 'Completed'],
+    enum: ['Planned', 'In Transit', 'Delayed', 'Diverted', 'Arrived', 'Completed', 'Docked'],
     default: 'In Transit'
   },
   plannedDepartureDate: {

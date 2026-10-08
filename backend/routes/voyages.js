@@ -7,12 +7,132 @@ const Alert = require('../models/Alert');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { createAuditLog } = require('../services/auditEngine');
 
+// Helper to build authentic fleet voyages
+const getFleetVoyages = (ships = []) => {
+  const s1 = ships.find(s => s.shipId === 'SH-101') || { shipId: 'SH-101', name: 'MSC Irina', imoNumber: 'IMO 9929429' };
+  const s2 = ships.find(s => s.shipId === 'SH-102') || { shipId: 'SH-102', name: 'Ever Ace', imoNumber: 'IMO 9893890' };
+  const s3 = ships.find(s => s.shipId === 'SH-103') || { shipId: 'SH-103', name: 'CMA CGM Jacques Saadé', imoNumber: 'IMO 9839179' };
+
+  return [
+    {
+      voyageId: 'VOY-2026-101',
+      shipId: s1.shipId,
+      shipName: s1.name,
+      imoNumber: s1.imoNumber,
+      departurePort: 'Singapore Port',
+      arrivalPort: 'Mumbai Port',
+      status: 'In Transit',
+      plannedDepartureDate: new Date(Date.now() - 4 * 24 * 3600 * 1000),
+      actualDepartureDate: new Date(Date.now() - 4 * 24 * 3600 * 1000),
+      estimatedArrivalTime: new Date(Date.now() + 18 * 3600 * 1000),
+      speedKnots: 19.4,
+      headingDegrees: 142,
+      currentCoordinates: { lat: 18.9412, lng: 72.8347 },
+      cargoContainersCount: 2450,
+      totalCargoWeightKg: 48200000,
+      waypoints: [
+        { name: 'Singapore Keppel Fairway', lat: 1.25, lng: 103.82, passed: true, passedAt: new Date(Date.now() - 4 * 24 * 3600 * 1000) },
+        { name: 'Malacca Strait Traffic Separation', lat: 3.12, lng: 100.55, passed: true, passedAt: new Date(Date.now() - 3 * 24 * 3600 * 1000) },
+        { name: 'Andaman Sea Deep Water Route', lat: 7.50, lng: 94.20, passed: true, passedAt: new Date(Date.now() - 2 * 24 * 3600 * 1000) },
+        { name: 'Arabian Sea Corridor (Laccadive)', lat: 14.82, lng: 74.15, passed: true, passedAt: new Date(Date.now() - 12 * 3600 * 1000) },
+        { name: 'Mumbai Harbour Pilot Station', lat: 18.94, lng: 72.83, passed: false }
+      ],
+      delays: [],
+      seaConditions: { waveMeters: 1.8, windKnots: 14, condition: 'Fair Seas' },
+      portCoordination: {
+        requestedBerth: 'Berth 01 (Quay North)',
+        berthingConfirmed: true,
+        portNotes: 'Berth 01 prepared by Mumbai Port Manager with 3 quay cranes assigned.'
+      },
+      voyageNotes: 'Carrying high-priority dry cargo and reefer units from East Asia to Mumbai Port.'
+    },
+    {
+      voyageId: 'VOY-2026-102',
+      shipId: s2.shipId,
+      shipName: s2.name,
+      imoNumber: s2.imoNumber,
+      departurePort: 'Shanghai Port',
+      arrivalPort: 'Singapore Port',
+      status: 'In Transit',
+      plannedDepartureDate: new Date(Date.now() - 6 * 24 * 3600 * 1000),
+      actualDepartureDate: new Date(Date.now() - 6 * 24 * 3600 * 1000),
+      estimatedArrivalTime: new Date(Date.now() + 32 * 3600 * 1000),
+      speedKnots: 18.2,
+      headingDegrees: 198,
+      currentCoordinates: { lat: 3.1390, lng: 101.6869 },
+      cargoContainersCount: 3180,
+      totalCargoWeightKg: 61500000,
+      waypoints: [
+        { name: 'Shanghai Yangshan Deepwater Terminal', lat: 30.62, lng: 122.06, passed: true, passedAt: new Date(Date.now() - 6 * 24 * 3600 * 1000) },
+        { name: 'Taiwan Strait Passage', lat: 24.50, lng: 119.80, passed: true, passedAt: new Date(Date.now() - 4 * 24 * 3600 * 1000) },
+        { name: 'South China Sea Corridor', lat: 14.20, lng: 113.50, passed: true, passedAt: new Date(Date.now() - 2 * 24 * 3600 * 1000) },
+        { name: 'Malacca Strait Traffic Separation (One Fathom Bank)', lat: 3.139, lng: 101.686, passed: true, passedAt: new Date(Date.now() - 6 * 3600 * 1000) },
+        { name: 'Singapore Port Jurong Gateway', lat: 1.28, lng: 103.75, passed: false }
+      ],
+      delays: [
+        {
+          reason: 'Monsoon sea swell reduced average speed in South China Sea',
+          delayHours: 3,
+          mitigation: 'Adjusted speed to 18.2 knots for container stability',
+          reportedBy: 'Capt. Suresh Pillai'
+        }
+      ],
+      seaConditions: { waveMeters: 2.1, windKnots: 18, condition: 'Moderate Swell' },
+      portCoordination: {
+        requestedBerth: 'Berth 02 (Jurong Quay)',
+        berthingConfirmed: true,
+        portNotes: 'Scheduled arrival confirmed with Singapore Port Master. 4 high-speed gantry cranes allocated.'
+      },
+      voyageNotes: 'Megamax container carrier transporting pharmaceutical reefers, auto components, and electronics.'
+    },
+    {
+      voyageId: 'VOY-2026-103',
+      shipId: s3.shipId,
+      shipName: s3.name,
+      imoNumber: s3.imoNumber,
+      departurePort: 'Dubai Port',
+      arrivalPort: 'Mumbai Port',
+      status: 'Docked',
+      plannedDepartureDate: new Date(Date.now() - 5 * 24 * 3600 * 1000),
+      actualDepartureDate: new Date(Date.now() - 5 * 24 * 3600 * 1000),
+      estimatedArrivalTime: new Date(Date.now() - 4 * 3600 * 1000),
+      actualArrivalTime: new Date(Date.now() - 4 * 3600 * 1000),
+      speedKnots: 0.0,
+      headingDegrees: 0,
+      currentCoordinates: { lat: 18.9500, lng: 72.8500 },
+      cargoContainersCount: 1890,
+      totalCargoWeightKg: 36800000,
+      waypoints: [
+        { name: 'Dubai Jebel Ali Port Terminal 2', lat: 25.01, lng: 55.06, passed: true, passedAt: new Date(Date.now() - 5 * 24 * 3600 * 1000) },
+        { name: 'Strait of Hormuz Inbound Channel', lat: 26.56, lng: 56.45, passed: true, passedAt: new Date(Date.now() - 4 * 24 * 3600 * 1000) },
+        { name: 'Gulf of Oman Deep Route', lat: 24.30, lng: 58.60, passed: true, passedAt: new Date(Date.now() - 3 * 24 * 3600 * 1000) },
+        { name: 'Arabian Sea East Crossing', lat: 20.10, lng: 67.40, passed: true, passedAt: new Date(Date.now() - 1 * 24 * 3600 * 1000) },
+        { name: 'Mumbai Port Berth 04', lat: 18.950, lng: 72.850, passed: true, passedAt: new Date(Date.now() - 4 * 3600 * 1000) }
+      ],
+      delays: [],
+      seaConditions: { waveMeters: 0.8, windKnots: 8, condition: 'Calm Waters (Docked)' },
+      portCoordination: {
+        requestedBerth: 'Berth 04 (JNPT Terminal)',
+        berthingConfirmed: true,
+        portNotes: 'Vessel safely docked at Berth 04. Unloading and customs clearance in progress.'
+      },
+      voyageNotes: 'LNG dual-fuel carrier delivering industrial chemicals and perishable agricultural produce.'
+    }
+  ];
+};
+
 // 1. List Voyages
 router.get('/', async (req, res) => {
   try {
     const { shipId, status, port } = req.query;
     const query = {};
-    if (shipId) query.shipId = shipId;
+    if (shipId) {
+      query.$or = [
+        { shipId },
+        { imoNumber: shipId },
+        { shipName: new RegExp(shipId, 'i') }
+      ];
+    }
     if (status) query.status = status;
     if (port) {
       query.$or = [{ departurePort: new RegExp(port, 'i') }, { arrivalPort: new RegExp(port, 'i') }];
@@ -20,74 +140,10 @@ router.get('/', async (req, res) => {
 
     let voyages = await Voyage.find(query).sort({ updatedAt: -1 });
 
-    // Populate sample voyages only when demo seeding is explicitly enabled.
-    if (voyages.length === 0 && process.env.ENABLE_DEMO_SEEDING === 'true') {
+    // Auto-populate fleet voyages if none exist in the database
+    if (voyages.length === 0 && (!shipId && !status && !port)) {
       const ships = await Ship.find();
-      const demoVoyages = [
-        {
-          voyageId: 'VOY-2026-081',
-          shipId: ships[0]?.shipId || 'SH-8801',
-          shipName: ships[0]?.name || 'MSC Irina',
-          imoNumber: ships[0]?.imoNumber || 'IMO 9805467',
-          departurePort: 'Singapore Port',
-          arrivalPort: 'Mumbai Port',
-          status: 'In Transit',
-          plannedDepartureDate: new Date(Date.now() - 4 * 24 * 3600 * 1000),
-          actualDepartureDate: new Date(Date.now() - 4 * 24 * 3600 * 1000),
-          estimatedArrivalTime: new Date(Date.now() + 18 * 3600 * 1000), // ~18 hours from now
-          speedKnots: 19.8,
-          headingDegrees: 312,
-          currentCoordinates: { lat: 14.82, lng: 74.15 },
-          cargoContainersCount: 2450,
-          totalCargoWeightKg: 48200000,
-          waypoints: [
-            { name: 'Singapore Keppel Fairway', lat: 1.25, lng: 103.82, passed: true, passedAt: new Date(Date.now() - 4 * 24 * 3600 * 1000) },
-            { name: 'Malacca Strait Traffic Separation', lat: 3.12, lng: 100.55, passed: true, passedAt: new Date(Date.now() - 3 * 24 * 3600 * 1000) },
-            { name: 'Andaman Sea Deep Water Route', lat: 7.50, lng: 94.20, passed: true, passedAt: new Date(Date.now() - 2 * 24 * 3600 * 1000) },
-            { name: 'Arabian Sea Corridor (Laccadive)', lat: 12.10, lng: 75.30, passed: true, passedAt: new Date(Date.now() - 12 * 3600 * 1000) },
-            { name: 'Mumbai Harbour Pilot Station', lat: 18.94, lng: 72.83, passed: false }
-          ],
-          seaConditions: { waveMeters: 1.8, windKnots: 14, condition: 'Fair Seas' },
-          portCoordination: {
-            requestedBerth: 'Berth 01 (Quay North)',
-            berthingConfirmed: true,
-            portNotes: 'Berth 01 prepared by Mumbai Port Manager with 3 quay cranes assigned.'
-          },
-          voyageNotes: 'Carrying high-priority dry cargo and reefer units from East Asia.'
-        },
-        {
-          voyageId: 'VOY-2026-082',
-          shipId: ships[1]?.shipId || 'SH-8802',
-          shipName: ships[1]?.name || 'Ever Given',
-          imoNumber: ships[1]?.imoNumber || 'IMO 9811000',
-          departurePort: 'Port of Rotterdam',
-          arrivalPort: 'Mumbai Port',
-          status: 'In Transit',
-          plannedDepartureDate: new Date(Date.now() - 8 * 24 * 3600 * 1000),
-          actualDepartureDate: new Date(Date.now() - 8 * 24 * 3600 * 1000),
-          estimatedArrivalTime: new Date(Date.now() + 48 * 3600 * 1000),
-          speedKnots: 17.5,
-          headingDegrees: 125,
-          currentCoordinates: { lat: 21.40, lng: 64.20 },
-          cargoContainersCount: 3100,
-          totalCargoWeightKg: 62000000,
-          waypoints: [
-            { name: 'Rotterdam Maasvlakte', lat: 51.95, lng: 4.02, passed: true },
-            { name: 'Gibraltar Strait', lat: 35.95, lng: -5.60, passed: true },
-            { name: 'Suez Canal Convoy Southbound', lat: 29.97, lng: 32.55, passed: true },
-            { name: 'Bab-el-Mandeb Strait', lat: 12.58, lng: 43.33, passed: true },
-            { name: 'Mumbai Port Approach', lat: 18.94, lng: 72.83, passed: false }
-          ],
-          seaConditions: { waveMeters: 2.1, windKnots: 16, condition: 'Moderate Swell' },
-          portCoordination: {
-            requestedBerth: 'Berth 02 (Quay South)',
-            berthingConfirmed: true,
-            portNotes: 'Scheduled arrival confirmed with Mumbai dock master.'
-          },
-          voyageNotes: 'European industrial exports and manufactured machinery.'
-        }
-      ];
-
+      const demoVoyages = getFleetVoyages(ships);
       voyages = await Voyage.insertMany(demoVoyages);
     }
 
