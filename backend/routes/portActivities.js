@@ -38,105 +38,163 @@ router.get('/berths', async (req, res) => {
     const port = req.query.port || 'Mumbai Port';
     const allShips = await Ship.find();
 
-    // Ships waiting for berth (Arrived or approaching this port without a dock)
-    const dockedShipIds = liveBerths.map(b => b.shipId).filter(Boolean);
-    const waitingShips = allShips.filter(s => 
-      !dockedShipIds.includes(s.shipId) && 
-      (s.status === 'Arrived' || s.destination?.toLowerCase().includes(port.toLowerCase()) || s.arrivalPort?.toLowerCase().includes(port.toLowerCase()))
+    // Ensure default berths exist for the target port
+    const existingForPort = liveBerths.filter(b => b.port?.toLowerCase().includes(port.toLowerCase()) || port.toLowerCase().includes(b.port?.toLowerCase()));
+    if (existingForPort.length === 0) {
+      liveBerths.push(
+        { berthId: `Berth 01 (${port} Quay)`, vessel: 'Available / Open', imo: 'N/A', shipId: null, status: 'Ready for Berthing', cranesActive: 0, teuThroughput: '0 TEU', port },
+        { berthId: `Berth 02 (${port} Terminal)`, vessel: 'Available / Open', imo: 'N/A', shipId: null, status: 'Ready for Berthing', cranesActive: 0, teuThroughput: '0 TEU', port },
+        { berthId: `Berth 03 (${port} Pier)`, vessel: 'Available / Open', imo: 'N/A', shipId: null, status: 'Ready for Berthing', cranesActive: 0, teuThroughput: '0 TEU', port }
+      );
+    }
+
+    const portBerths = liveBerths.filter(b => 
+      !b.port || 
+      b.port.toLowerCase().includes(port.toLowerCase()) || 
+      port.toLowerCase().includes(b.port.toLowerCase())
     );
 
-    const occupiedCount = liveBerths.filter(b => b.vessel !== 'Available / Open').length;
-    const capacityPercent = Math.round((occupiedCount / liveBerths.length) * 100);
+    // Ships waiting for berth (Ships not currently docked at this port's active berths)
+    const dockedShipIds = portBerths.map(b => b.shipId).filter(Boolean);
+    const waitingShips = allShips.filter(s => !dockedShipIds.includes(s.shipId));
+
+    const occupiedCount = portBerths.filter(b => b.vessel !== 'Available / Open').length;
+    const totalCount = Math.max(portBerths.length, 1);
+    const capacityPercent = Math.round((occupiedCount / totalCount) * 100);
 
     res.json({
       port,
-      berths: liveBerths,
+      berths: portBerths,
       waitingShips,
-      totalBerths: liveBerths.length,
+      totalBerths: portBerths.length,
       occupiedBerths: occupiedCount,
-      availableBerths: liveBerths.length - occupiedCount,
+      availableBerths: portBerths.length - occupiedCount,
       capacityPercent
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to retrieve berth information' });
+    console.error('Error retrieving berth information:', error);
+    res.status(500).json({ error: error.message || 'Failed to retrieve berth information' });
   }
 });
 
 // 3. Assign or Update a Berth
-router.patch('/berths/:berthId', requireAuth, requireRole('admin', 'port_manager'), async (req, res) => {
+router.patch('/berths/:berthId', requireAuth, requireRole('admin', 'port_manager', 'ship_manager'), async (req, res) => {
   try {
-    const { berthId } = req.params;
-    const { vessel, imo, shipId, status, cranesActive, teuThroughput, notes } = req.body;
+    const rawBerthId = req.params.berthId;
+    const { vessel, imo, shipId, status, cranesActive, teuThroughput, notes, port } = req.body;
 
-    const berthIndex = liveBerths.findIndex(b => b.berthId === berthId || b.berthId.includes(berthId));
+    const decodedId = decodeURIComponent(rawBerthId).trim().toLowerCase();
+    let berthIndex = liveBerths.findIndex(b =>
+      b.berthId.toLowerCase() === decodedId ||
+      b.berthId.toLowerCase().includes(decodedId) ||
+      decodedId.includes(b.berthId.toLowerCase())
+    );
+
+    const targetPort = port || req.user.assignedPort || 'Mumbai Port';
+
     if (berthIndex === -1) {
-      return res.status(404).json({ error: 'Berth not found' });
+      // Create berth dynamically if not found
+      const newBerth = {
+        berthId: decodeURIComponent(rawBerthId).trim(),
+        vessel: vessel || 'Available / Open',
+        imo: imo || 'N/A',
+        shipId: shipId || null,
+        status: status || 'Ready for Berthing',
+        cranesActive: cranesActive !== undefined ? Number(cranesActive) : 0,
+        teuThroughput: teuThroughput || '0 TEU',
+        port: targetPort
+      };
+      liveBerths.push(newBerth);
+      berthIndex = liveBerths.length - 1;
     }
 
     const prevBerth = { ...liveBerths[berthIndex] };
 
+    const isAvailable = !vessel || vessel === 'Available / Open';
+
     liveBerths[berthIndex] = {
       ...liveBerths[berthIndex],
-      vessel: vessel !== undefined ? vessel : liveBerths[berthIndex].vessel,
-      imo: imo !== undefined ? imo : liveBerths[berthIndex].imo,
-      shipId: shipId !== undefined ? shipId : liveBerths[berthIndex].shipId,
-      status: status !== undefined ? status : liveBerths[berthIndex].status,
-      cranesActive: cranesActive !== undefined ? Number(cranesActive) : liveBerths[berthIndex].cranesActive,
-      teuThroughput: teuThroughput !== undefined ? teuThroughput : liveBerths[berthIndex].teuThroughput
+      vessel: isAvailable ? 'Available / Open' : vessel,
+      imo: isAvailable ? 'N/A' : (imo || 'N/A'),
+      shipId: isAvailable ? null : (shipId || liveBerths[berthIndex].shipId || null),
+      status: status !== undefined ? status : (isAvailable ? 'Ready for Berthing' : liveBerths[berthIndex].status),
+      cranesActive: cranesActive !== undefined ? Number(cranesActive) : (isAvailable ? 0 : liveBerths[berthIndex].cranesActive),
+      teuThroughput: teuThroughput !== undefined ? teuThroughput : (isAvailable ? '0 TEU' : liveBerths[berthIndex].teuThroughput),
+      port: targetPort
     };
 
+    const updatedBerth = liveBerths[berthIndex];
+
     // If a ship is assigned, update the ship status in DB as well
-    if (shipId) {
+    if (updatedBerth.shipId || (!isAvailable && vessel)) {
+      const activeShipId = updatedBerth.shipId;
       let shipStatus = 'Docked';
-      if (status?.includes('Loading')) shipStatus = 'Loading';
+      if (status?.includes('Loading') && !status?.includes('Unloading')) shipStatus = 'Loading';
       if (status?.includes('Unloading')) shipStatus = 'Unloading';
       if (status?.includes('Departed') || status?.includes('Ready to Depart')) shipStatus = 'Ready to Depart';
-      await Ship.findOneAndUpdate({ shipId }, { status: shipStatus, currentLocation: liveBerths[berthIndex].port });
+      
+      const query = activeShipId ? { shipId: activeShipId } : { name: vessel };
+      await Ship.findOneAndUpdate(query, { status: shipStatus, currentLocation: updatedBerth.port });
+
+      // Synchronize Voyage coordination so Ship Manager sees confirmed berth
+      try {
+        const Voyage = require('../models/Voyage');
+        const vQuery = activeShipId ? { $or: [{ shipId: activeShipId }, { shipName: vessel }] } : { shipName: vessel };
+        await Voyage.updateMany(vQuery, {
+          $set: {
+            'portCoordination.requestedBerth': updatedBerth.berthId,
+            'portCoordination.berthingConfirmed': true,
+            'portCoordination.portNotes': `Berth allocated by Port Manager (${req.user.name}): ${updatedBerth.berthId} - Status: ${updatedBerth.status}`
+          }
+        });
+      } catch (voyageErr) {
+        console.warn('Voyage coordination update note:', voyageErr.message);
+      }
     }
 
     // Log Port Activity
     const actId = `PORT-BERTH-${Date.now()}`;
     const activity = new PortActivity({
       activityId: actId,
-      port: liveBerths[berthIndex].port,
+      port: updatedBerth.port,
       activityType: 'BERTH_ALLOCATION',
       entityType: 'Berth',
-      entityId: berthId,
-      performedBy: req.user.name,
-      userRole: req.user.role,
+      entityId: updatedBerth.berthId,
+      performedBy: req.user.name || 'Port Officer',
+      userRole: req.user.role || 'port_manager',
       details: {
-        berthId,
-        vesselName: liveBerths[berthIndex].vessel,
-        craneNumber: `${liveBerths[berthIndex].cranesActive} Cranes`,
-        notes: notes || `Berth ${berthId} updated to ${liveBerths[berthIndex].status} for vessel ${liveBerths[berthIndex].vessel}`
+        berthId: updatedBerth.berthId,
+        vesselName: updatedBerth.vessel,
+        craneNumber: `${updatedBerth.cranesActive} Cranes`,
+        notes: notes || `Berth ${updatedBerth.berthId} updated to ${updatedBerth.status} for vessel ${updatedBerth.vessel}`
       },
       status: 'Completed'
     });
 
     const audit = await createAuditLog({
-      userId: req.user.userId,
-      username: req.user.name,
-      userRole: req.user.role,
+      userId: req.user.userId || 'port-mgr-001',
+      username: req.user.name || 'Port Officer',
+      userRole: req.user.role || 'port_manager',
       action: 'BERTH_ALLOCATION_UPDATED',
       entityType: 'Berth',
-      entityId: berthId,
-      shipId: shipId || null,
-      location: liveBerths[berthIndex].port,
+      entityId: updatedBerth.berthId,
+      shipId: updatedBerth.shipId || null,
+      location: updatedBerth.port,
       previousValue: prevBerth,
-      newValue: liveBerths[berthIndex]
+      newValue: updatedBerth
     });
 
     activity.auditId = audit.auditId;
     await activity.save();
 
     res.json({
-      message: `Berth ${berthId} updated successfully`,
-      berth: liveBerths[berthIndex],
+      message: `Berth ${updatedBerth.berthId} updated successfully (${updatedBerth.vessel})`,
+      berth: updatedBerth,
       auditId: audit.auditId
     });
   } catch (error) {
     console.error('Error updating berth:', error);
-    res.status(500).json({ error: 'Failed to update berth allocation' });
+    res.status(500).json({ error: error.message || 'Failed to update berth allocation' });
   }
 });
 
@@ -168,6 +226,9 @@ router.post('/gate', requireAuth, requireRole('admin', 'port_manager'), async (r
     container.currentLocation = newLocation;
 
     // Add milestone
+    if (!Array.isArray(container.journeyMilestones)) {
+      container.journeyMilestones = [];
+    }
     const milestone = {
       stage: isGateIn ? 'ARRIVED AT PORT' : 'DELIVERED',
       status: newStatus,
@@ -230,7 +291,7 @@ router.post('/gate', requireAuth, requireRole('admin', 'port_manager'), async (r
     });
   } catch (error) {
     console.error('Error recording gate event:', error);
-    res.status(500).json({ error: 'Failed to record gate event' });
+    res.status(500).json({ error: error.message || 'Failed to record gate event' });
   }
 });
 
@@ -257,6 +318,10 @@ router.patch('/yard-slot', requireAuth, requireRole('admin', 'port_manager'), as
     
     if (container.status === 'Booked') {
       container.status = 'Ready for Loading';
+    }
+
+    if (!Array.isArray(container.journeyMilestones)) {
+      container.journeyMilestones = [];
     }
 
     const milestone = {
@@ -316,7 +381,7 @@ router.patch('/yard-slot', requireAuth, requireRole('admin', 'port_manager'), as
     });
   } catch (error) {
     console.error('Error assigning yard slot:', error);
-    res.status(500).json({ error: 'Failed to assign yard slot' });
+    res.status(500).json({ error: error.message || 'Failed to assign yard slot' });
   }
 });
 
@@ -335,6 +400,10 @@ router.post('/loading-action', requireAuth, requireRole('admin', 'port_manager')
 
     if (!container) {
       return res.status(404).json({ error: `Container ${containerId} not found` });
+    }
+
+    if (!Array.isArray(container.journeyMilestones)) {
+      container.journeyMilestones = [];
     }
 
     // Workflow check: If loading, verify inspection clearance!
@@ -473,7 +542,7 @@ router.post('/loading-action', requireAuth, requireRole('admin', 'port_manager')
     }
   } catch (error) {
     console.error('Error processing loading action:', error);
-    res.status(500).json({ error: 'Failed to process loading/unloading action' });
+    res.status(500).json({ error: error.message || 'Failed to process loading/unloading action' });
   }
 });
 
@@ -490,10 +559,16 @@ router.post('/hold-container', requireAuth, requireRole('admin', 'port_manager',
       return res.status(404).json({ error: `Container ${containerId} not found` });
     }
 
+    if (!Array.isArray(container.journeyMilestones)) {
+      container.journeyMilestones = [];
+    }
+
     container.status = 'Flagged';
     container.riskLevel = 'High';
     container.riskScore = Math.max(container.riskScore || 0, 75);
-    if (!container.riskReasons) container.riskReasons = [];
+    if (!Array.isArray(container.riskReasons)) {
+      container.riskReasons = [];
+    }
     container.riskReasons.push(`Quarantine Hold: ${reason || 'Hold applied by Customs Inspector'}`);
 
     const milestone = {

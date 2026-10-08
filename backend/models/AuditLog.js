@@ -33,7 +33,27 @@ const AuditLogSchema = new mongoose.Schema({
   },
   entityType: {
     type: String,
-    enum: ['Container', 'Ship', 'Inspection', 'Evidence', 'User', 'System', 'Analytics', 'ReeferTemperature', 'PortActivity', 'Voyage', 'Report', 'Anomaly', 'Alert'],
+    enum: [
+      'Container',
+      'Ship',
+      'Inspection',
+      'Evidence',
+      'User',
+      'System',
+      'Analytics',
+      'ReeferTemperature',
+      'PortActivity',
+      'Voyage',
+      'Report',
+      'Anomaly',
+      'Alert',
+      'Berth',
+      'Security',
+      'Port',
+      'Yard',
+      'Gate',
+      'General'
+    ],
     required: true
   },
   entityId: {

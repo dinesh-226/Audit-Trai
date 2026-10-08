@@ -235,11 +235,17 @@ export const PortManagerDashboard = ({ onNavigate }) => {
 
   const handleUpdateBerth = async (e) => {
     e.preventDefault();
-    if (!berthModalBerth) return;
+    if (!berthModalBerth) {
+      showNotice('Please select a target berth', true);
+      return;
+    }
     setActionLoading(true);
     try {
-      const res = await api.portActivities.updateBerth(berthModalBerth.berthId, berthForm);
-      showNotice(res.message || 'Berth updated');
+      const res = await api.portActivities.updateBerth(berthModalBerth.berthId, {
+        ...berthForm,
+        port: assignedPort
+      });
+      showNotice(res.message || 'Berth updated successfully');
       setBerthModalBerth(null);
       await loadAllPortData();
     } catch (err) {
@@ -733,7 +739,7 @@ export const PortManagerDashboard = ({ onNavigate }) => {
                         <td style={{ textAlign: 'right' }}>
                           <button
                             onClick={() => {
-                              const openBerth = berthsData?.berths?.find(b => b.vessel === 'Available / Open') || berthsData?.berths?.[0];
+                              const openBerth = berthsData?.berths?.find(b => b.vessel === 'Available / Open') || berthsData?.berths?.[0] || { berthId: 'Berth 01 (Quay North)', vessel: 'Available / Open' };
                               setBerthModalBerth(openBerth);
                               setBerthForm({
                                 vessel: s.name,
@@ -1504,6 +1510,28 @@ export const PortManagerDashboard = ({ onNavigate }) => {
             </div>
 
             <form onSubmit={handleUpdateBerth} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>Target Berth / Dock:</label>
+                <select
+                  className="select-control"
+                  value={berthModalBerth.berthId}
+                  onChange={(e) => {
+                    const found = berthsData?.berths?.find(b => b.berthId === e.target.value);
+                    if (found) {
+                      setBerthModalBerth(found);
+                    } else {
+                      setBerthModalBerth({ ...berthModalBerth, berthId: e.target.value });
+                    }
+                  }}
+                >
+                  {(berthsData?.berths || [berthModalBerth]).map(b => (
+                    <option key={b.berthId} value={b.berthId}>
+                      {b.berthId} {b.vessel ? `(${b.vessel})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>Select Vessel:</label>
                 <select
