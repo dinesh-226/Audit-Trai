@@ -1,6 +1,15 @@
 require('dotenv').config();
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');
+
+// Safe DNS Resolution (only for local Node, never break Vercel / AWS Lambda)
+if (process.env.VERCEL !== '1' && !process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.VERCEL_ENV) {
+  try {
+    const dns = require('dns');
+    if (dns.setDefaultResultOrder) {
+      dns.setDefaultResultOrder('ipv4first');
+    }
+  } catch (e) {}
+}
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -22,45 +31,74 @@ const voyageRoutes = require('./routes/voyages');
 const analyticsRoutes = require('./routes/analytics');
 const temperatureRoutes = require('./routes/temperature');
 
-const { seedDatabase } = require('./services/seedDataService');
 const { requireAuth, requireRole } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middlewares
-const allowedOrigins = [
-  'https://audit-trai-3ks9.vercel.app',
-  'https://audit-trai.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://localhost:5000'
-];
-
+// CORS - allow all frontend origins & handle OPTIONS immediately
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-      return callback(null, true);
-    }
-    return callback(null, true);
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-demo-user', 'x-demo-role', 'x-requested-with', 'Accept']
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'x-demo-user',
+    'x-demo-role',
+    'x-auth-token',
+    'x-requested-with',
+    'Accept'
+  ]
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Serverless MongoDB Auto-Connect Middleware
-app.use(async (req, res, next) => {
-  if (mongoose.connection.readyState !== 1) {
-    await connectMongoDB();
+// Express parsers
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+
+// MongoDB Connection with global connection cache (Optimized for Vercel Serverless)
+const MONGO_FALLBACK = 'mongodb+srv://dinesh:paurdinesh@dineshcluster.qvm5csd.mongodb.net/Audit_Trail?retryWrites=true&w=majority';
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function connectMongoDB() {
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
   }
-  next();
-});
 
-// Request logger debug helper
+  if (!cached.promise) {
+    const mongoUri = process.env.MONGO_URI || MONGO_FALLBACK;
+    const opts = {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 10000,
+      maxPoolSize: 10
+    };
+
+    cached.promise = mongoose.connect(mongoUri, opts).then((mongooseInstance) => {
+      console.log(`✅ Connected to MongoDB Atlas: "${mongooseInstance.connection.name}"`);
+      return mongooseInstance;
+    }).catch((err) => {
+      cached.promise = null;
+      console.error('❌ MongoDB Atlas Connection Error:', err.message);
+      throw err;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    cached.promise = null;
+    throw err;
+  }
+
+  return cached.conn;
+}
+
+// Request logger for non-production debugging
 app.use((req, res, next) => {
   if (process.env.NODE_ENV !== 'production' && req.path.startsWith('/api')) {
     console.log(`[${new Date().toISOString().substring(11, 19)}] ${req.method} ${req.path}`);
@@ -68,17 +106,62 @@ app.use((req, res, next) => {
   next();
 });
 
-// Root API Info
+// Root API Health & Diagnostic Info (Fast non-blocking)
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
     system: 'AI-Powered Container Ship Audit Trail & Maritime Monitoring System',
     version: '2.0.0',
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'standby',
+    databaseName: mongoose.connection.name || 'Audit_Trail',
     backendUrl: 'https://audit-trai.vercel.app',
     frontendUrl: 'https://audit-trai-3ks9.vercel.app',
     health: 'https://audit-trai.vercel.app/api/health',
     timestamp: new Date().toISOString()
   });
+});
+
+// System Health Check
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  try {
+    if (mongoose.connection.readyState === 1) {
+      dbStatus = 'connected';
+    } else {
+      await connectMongoDB();
+      dbStatus = 'connected';
+    }
+  } catch (e) {
+    dbStatus = `connection_error: ${e.message}`;
+  }
+
+  res.json({
+    status: 'online',
+    system: 'AI-Powered Container Ship Audit Trail & Monitoring System',
+    version: '2.0.0',
+    timestamp: new Date().toISOString(),
+    database: dbStatus,
+    databaseName: mongoose.connection.name || 'Audit_Trail',
+    databaseHost: mongoose.connection.host || 'Atlas Cluster'
+  });
+});
+
+// Serverless MongoDB Auto-Connect Middleware for API Routes
+app.use('/api', async (req, res, next) => {
+  if (req.method === 'OPTIONS') return next();
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      await connectMongoDB();
+    }
+    next();
+  } catch (err) {
+    console.error('Database middleware failed to connect:', err.message);
+    return res.status(503).json({
+      success: false,
+      error: 'Database connection currently unavailable. Please verify MongoDB Atlas IP Whitelist (0.0.0.0/0).',
+      details: err.message
+    });
+  }
 });
 
 // API Routes
@@ -98,25 +181,8 @@ app.use('/api/voyages', voyageRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/temperature', temperatureRoutes);
 
-// Health & System Diagnostics Check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'online',
-    system: 'AI-Powered Container Ship Audit Trail & Monitoring System',
-    version: '2.0.0',
-    timestamp: new Date().toISOString(),
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    databaseName: mongoose.connection.name || 'Audit_Trail',
-    databaseHost: mongoose.connection.host || 'Atlas Cluster'
-  });
-});
-
-// Force Database Re-seed endpoint (Admin demo convenience)
+// Database Re-seed endpoint (Admin demo convenience)
 app.post('/api/system/reseed', requireAuth, requireRole('admin'), async (req, res) => {
-  if (process.env.ENABLE_DEMO_SEEDING !== 'true') {
-    return res.status(403).json({ error: 'Demo seeding is disabled' });
-  }
-
   try {
     delete require.cache[require.resolve('./services/seedDataService')];
     const { seedDatabase } = require('./services/seedDataService');
@@ -127,35 +193,33 @@ app.post('/api/system/reseed', requireAuth, requireRole('admin'), async (req, re
   }
 });
 
-// Start Express Server (only when run directly)
-if (process.env.VERCEL !== '1') {
-  app.listen(PORT, () => {
-    console.log(`🚀 ContainerShip Audit Trail Server running on http://localhost:${PORT}`);
-    console.log(`📊 API endpoints live at http://localhost:${PORT}/api/`);
+// 404 Catch-all handler for unmatched routes (Express 5 safe)
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Route ${req.method} ${req.originalUrl} not found`
   });
-}
+});
 
-// MongoDB Connection with Auto-Retry & Seed
-async function connectMongoDB() {
-  if (mongoose.connection.readyState === 1) return;
-  const mongoUri = process.env.MONGO_URI || 'mongodb://dinesh:paurdinesh@ac-zlrzxsj-shard-00-00.qvm5csd.mongodb.net:27017,ac-zlrzxsj-shard-00-01.qvm5csd.mongodb.net:27017,ac-zlrzxsj-shard-00-02.qvm5csd.mongodb.net:27017/Trail?ssl=true&replicaSet=atlas-1197x8-shard-0&authSource=admin&retryWrites=true&w=majority';
-  console.log(`📡 Connecting to MongoDB Atlas Database...`);
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Global Error Handler:', err);
+  res.status(err.status || 500).json({
+    success: false,
+    error: err.message || 'Internal Server Error'
+  });
+});
+
+// Connect to MongoDB on direct server start
+if (process.env.VERCEL !== '1' && !process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.VERCEL_ENV) {
+  connectMongoDB().catch(err => console.error('Initial DB connect error:', err.message));
   
-  try {
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 15000,
-      autoIndex: true
+  if (require.main === module) {
+    app.listen(PORT, () => {
+      console.log(`🚀 ContainerShip Audit Trail Server running on http://localhost:${PORT}`);
+      console.log(`📊 API endpoints live at http://localhost:${PORT}/api/`);
     });
-    console.log(`✅ Successfully connected to MongoDB Atlas Database: "${mongoose.connection.name}"`);
-    
-    if (process.env.ENABLE_DEMO_SEEDING === 'true') {
-      await seedDatabase(false);
-    }
-  } catch (error) {
-    console.error('❌ MongoDB Atlas Connection Error:', error.message);
   }
 }
-
-connectMongoDB();
 
 module.exports = app;
