@@ -82,8 +82,8 @@ router.get('/:inspectionId', async (req, res) => {
   }
 });
 
-// 4. Create / Submit Inspection (Inspector, Admin)
-router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res) => {
+// 4. Create / Submit Inspection (Inspector, Admin, Port Manager, Ship Manager)
+router.post('/', requireAuth, requireRole('inspector', 'admin', 'port_manager', 'ship_manager'), async (req, res) => {
   try {
     const {
       containerId,
@@ -110,8 +110,13 @@ router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res
       return res.status(400).json({ error: 'Container ID and Inspection Result are required' });
     }
 
+    const cleanContainerId = String(containerId).trim();
     const container = await Container.findOne({
-      $or: [{ containerId: containerId.toUpperCase() }, { containerId }]
+      $or: [
+        { containerId: cleanContainerId.toUpperCase() },
+        { containerId: cleanContainerId },
+        { containerId: new RegExp(`^${cleanContainerId}$`, 'i') }
+      ]
     });
 
     if (!container) {
@@ -120,7 +125,8 @@ router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res
 
     const count = await Inspection.countDocuments();
     const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const inspectionId = `INS-${datePrefix}-${String(count + 1).padStart(3, '0')}`;
+    const randomSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
+    const inspectionId = `INS-${datePrefix}-${String(count + 1).padStart(3, '0')}-${randomSuffix}`;
 
     // Verify seal match
     const expSeal = expectedSealNumber || container.sealNumber;
@@ -143,42 +149,66 @@ router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res
     const targetPort = port || req.user.assignedPort || container.currentLocation || 'Mumbai Port';
     const computedGps = gpsLocation || resolveGeoCoordinates(targetPort, 'Port Terminal', container.containerId);
 
+    // Sanitize checklist for Mongoose schema compliance
+    const sanitizedChecklist = Array.isArray(checklist) ? checklist.map(item => ({
+      item: item.item || 'Inspection Item',
+      status: (item.status && ['Pass', 'Fail', 'N/A'].includes(item.status))
+        ? item.status
+        : (item.passed ? 'Pass' : 'Fail'),
+      passed: Boolean(item.passed ?? (item.status === 'Pass' || item.status === 'N/A')),
+      comments: item.comments || '',
+      defectType: item.defectType || null,
+      severity: (item.severity && ['Minor', 'Moderate', 'Major', 'Critical'].includes(item.severity))
+        ? item.severity
+        : null
+    })) : [];
+
+    const computedStatus = status || ({
+      Passed: 'Passed',
+      Failed: 'Failed',
+      'Requires Re-inspection': 'Re-inspection Required',
+      'Flagged for Quarantine': 'On Hold',
+      'On Hold': 'On Hold',
+      'Repair Required': 'Repair Required',
+      'In Progress': 'In Progress',
+      Assigned: 'Assigned',
+      Submitted: 'Submitted'
+    }[result] || 'Submitted');
+
     const inspection = new Inspection({
       inspectionId,
       containerId: container.containerId,
       shipId: shipId || container.assignedShipId,
-      inspectorId: req.user.userId,
-      inspectorName: req.user.name,
+      inspectorId: req.user.userId || 'inspector-001',
+      inspectorName: req.user.name || 'Inspector Officer',
       port: targetPort,
       inspectionType,
-      status: status || ({
-        Passed: 'Passed',
-        Failed: 'Failed',
-        'Requires Re-inspection': 'Re-inspection Required',
-        'Flagged for Quarantine': 'On Hold',
-        'On Hold': 'On Hold',
-        'Repair Required': 'Repair Required',
-        'In Progress': 'In Progress',
-        Assigned: 'Assigned',
-        Submitted: 'Submitted'
-      }[result] || 'Submitted'),
+      status: computedStatus,
       result,
       expectedSealNumber: expSeal,
       physicalSealNumber: physSeal,
       sealMatch,
       sealIntact: Boolean(sealIntact),
-      temperatureRecorded: temperatureRecorded !== undefined && temperatureRecorded !== '' ? Number(temperatureRecorded) : null,
-      checklist: checklist || [],
+      temperatureRecorded: temperatureRecorded !== undefined && temperatureRecorded !== '' && temperatureRecorded !== null ? Number(temperatureRecorded) : null,
+      checklist: sanitizedChecklist,
       defectsDetected: defectsDetected || [],
       recommendation: recommendation || (result === 'Passed' ? 'Approve for Sea Loading' : 'Hold for Quarantine Review'),
       notes: notes || '',
       evidenceIds: evidenceIds || [],
       photographs: processedPhotos,
-      gpsLocation: { lat: computedGps.lat, lng: computedGps.lng },
+      gpsLocation: { lat: computedGps?.lat || 18.94, lng: computedGps?.lng || 72.83 },
       deviceInfo: deviceInfo || 'Rugged Port Inspector Terminal (v2.4)'
     });
 
     await inspection.save();
+
+    // Ensure array properties exist on container
+    if (!Array.isArray(container.journeyMilestones)) {
+      container.journeyMilestones = [];
+    }
+    if (!Array.isArray(container.riskReasons)) {
+      container.riskReasons = [];
+    }
 
     // Update container operational status based on result
     if (result === 'Passed') {
@@ -187,12 +217,13 @@ router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res
       container.status = 'Flagged';
       container.riskLevel = 'High';
       container.riskScore = Math.max(container.riskScore || 0, 80);
-      if (!container.riskReasons) container.riskReasons = [];
       container.riskReasons.push(`Failed ${inspectionType}: ${notes || 'Defects detected'}`);
     } else if (result === 'Repair Required') {
       container.status = 'Delayed';
       container.isDelayed = true;
       container.delayReason = `Repair required: ${notes || 'Structural defect'}`;
+    } else if (result === 'Requires Re-inspection' || result === 'In Progress' || result === 'Assigned') {
+      container.status = 'Under Inspection';
     }
 
     // Add milestone
@@ -241,16 +272,20 @@ router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res
         sealIntact: inspection.sealIntact,
         sealMatch,
         recommendation: inspection.recommendation,
-        defectsCount: inspection.defectsDetected.length,
-        photosCount: inspection.photographs.length
+        defectsCount: (inspection.defectsDetected || []).length,
+        photosCount: (inspection.photographs || []).length
       }
     });
 
     inspection.auditId = audit.auditId;
     await inspection.save();
 
-    // Recalculate container risk score
-    await calculateContainerRisk(container);
+    // Recalculate container risk score safely
+    try {
+      await calculateContainerRisk(container);
+    } catch (riskErr) {
+      console.warn('Risk score recalculation warning:', riskErr.message);
+    }
 
     res.status(201).json({
       message: `Inspection ${inspection.inspectionId} recorded successfully (${result})`,
@@ -259,12 +294,12 @@ router.post('/', requireAuth, requireRole('inspector', 'admin'), async (req, res
     });
   } catch (error) {
     console.error('Error recording inspection:', error);
-    res.status(500).json({ error: 'Failed to record inspection' });
+    res.status(500).json({ error: error.message || 'Failed to record inspection' });
   }
 });
 
 // 5. Update Inspection Status (e.g. In Progress, On Hold, Repair Required, Re-inspection Required)
-router.patch('/:inspectionId/status', requireAuth, requireRole('inspector', 'admin'), async (req, res) => {
+router.patch('/:inspectionId/status', requireAuth, requireRole('inspector', 'admin', 'port_manager', 'ship_manager'), async (req, res) => {
   try {
     const { status, result, recommendation, notes } = req.body;
     const inspection = await Inspection.findOne({ inspectionId: req.params.inspectionId });
@@ -300,12 +335,12 @@ router.patch('/:inspectionId/status', requireAuth, requireRole('inspector', 'adm
       auditId: audit.auditId
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update inspection status' });
+    res.status(500).json({ error: error.message || 'Failed to update inspection status' });
   }
 });
 
 // 6. Request Re-inspection / Repair
-router.post('/:inspectionId/request-reinspection', requireAuth, requireRole('inspector', 'admin', 'port_manager'), async (req, res) => {
+router.post('/:inspectionId/request-reinspection', requireAuth, requireRole('inspector', 'admin', 'port_manager', 'ship_manager'), async (req, res) => {
   try {
     const { reason, priority = 'High', deadlineHours = 24, notes } = req.body;
     const inspection = await Inspection.findOne({ inspectionId: req.params.inspectionId });
@@ -349,7 +384,7 @@ router.post('/:inspectionId/request-reinspection', requireAuth, requireRole('ins
       auditId: audit.auditId
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to request re-inspection' });
+    res.status(500).json({ error: error.message || 'Failed to request re-inspection' });
   }
 });
 

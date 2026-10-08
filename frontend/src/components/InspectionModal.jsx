@@ -11,7 +11,7 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
   const [formData, setFormData] = useState({
     containerId: containerId || '',
     shipId: shipId || '',
-    port: user?.assignedPort || '',
+    port: user?.assignedPort || 'Mumbai Port',
     inspectionType: 'Safety & Structural',
     result: '',
     notes: '',
@@ -33,12 +33,27 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
     fetchContainers();
   }, []);
 
+  useEffect(() => {
+    if (containerId) {
+      setFormData(prev => ({
+        ...prev,
+        containerId: containerId.trim().toUpperCase(),
+        shipId: shipId || prev.shipId
+      }));
+    }
+  }, [containerId, shipId]);
+
   const fetchContainers = async () => {
     try {
       const data = await api.containers.getAll();
-      setContainersList(data || []);
-      if (!containerId && data?.length > 0) {
-        setFormData(prev => ({ ...prev, containerId: data[0].containerId }));
+      const list = Array.isArray(data) ? data : [];
+      setContainersList(list);
+      if (!containerId && list.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          containerId: prev.containerId || list[0].containerId,
+          shipId: prev.shipId || list[0].assignedShipId || ''
+        }));
       }
     } catch (e) {
       console.error(e);
@@ -58,8 +73,9 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!containersList.some(container => container.containerId === formData.containerId)) {
-      setError('Select an existing container before submitting an inspection.');
+    const targetId = formData.containerId?.trim();
+    if (!targetId) {
+      setError('Select a container before submitting an inspection.');
       return;
     }
     if (!formData.result) {
@@ -70,12 +86,20 @@ export const InspectionModal = ({ containerId, shipId, onClose, onSaved }) => {
     setError(null);
 
     try {
+      const formattedChecklist = checklist.map(item => ({
+        item: item.item,
+        status: item.passed ? 'Pass' : 'Fail',
+        passed: Boolean(item.passed),
+        comments: item.comments || ''
+      }));
+
       const payload = {
         ...formData,
-        containerId: formData.containerId.toUpperCase(),
+        containerId: targetId.toUpperCase(),
+        port: formData.port || user?.assignedPort || 'Mumbai Port',
         sealIntact: checklist[0]?.passed || false,
         temperatureRecorded: formData.temperatureRecorded !== '' ? Number(formData.temperatureRecorded) : null,
-        checklist
+        checklist: formattedChecklist
       };
 
       await api.inspections.create(payload);
