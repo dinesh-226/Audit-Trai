@@ -1,8 +1,12 @@
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' ? 'https://audit-trai.vercel.app/api' : '/api');
 
 const getHeaders = () => {
-  const token = localStorage.getItem('auditflow_token');
-  const demoRole = localStorage.getItem('auditflow_demo_role');
+  const token = typeof window !== 'undefined'
+    ? (sessionStorage.getItem('auditflow_token') || localStorage.getItem('auditflow_token'))
+    : null;
+  const demoRole = typeof window !== 'undefined'
+    ? (sessionStorage.getItem('auditflow_demo_role') || localStorage.getItem('auditflow_demo_role'))
+    : null;
 
   const headers = {
     'Content-Type': 'application/json'

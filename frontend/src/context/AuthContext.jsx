@@ -3,15 +3,57 @@ import { api } from '../services/api';
 
 const AuthContext = createContext();
 
+const getStoredItem = (key) => {
+  try {
+    if (typeof window === 'undefined') return null;
+    return sessionStorage.getItem(key) || localStorage.getItem(key) || null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const setStoredItem = (key, value) => {
+  try {
+    if (typeof window === 'undefined') return;
+    if (value !== null && value !== undefined) {
+      sessionStorage.setItem(key, value);
+      localStorage.setItem(key, value);
+    } else {
+      sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
+    }
+  } catch (e) {}
+};
+
+const clearStoredAuth = () => {
+  try {
+    if (typeof window === 'undefined') return;
+    const keys = [
+      'auditflow_token',
+      'auditflow_user',
+      'auditflow_demo_role',
+      'auditflow_view_mode',
+      'auditflow_active_tab',
+      'auditflow_selected_ship_id',
+      'auditflow_selected_container_id',
+      'auditflow_timeline_container_id'
+    ];
+    keys.forEach(k => {
+      sessionStorage.removeItem(k);
+      localStorage.removeItem(k);
+    });
+  } catch (e) {}
+};
+
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('auditflow_token') || null);
+  const [token, setToken] = useState(() => getStoredItem('auditflow_token'));
   const [loading, setLoading] = useState(true);
 
-  // Initialize user from localStorage if present
+  // Initialize user from isolated tab storage first
   const [user, setUser] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('auditflow_user');
-      if (savedUser) return JSON.parse(savedUser);
+      const savedUserStr = getStoredItem('auditflow_user');
+      if (savedUserStr) return JSON.parse(savedUserStr);
     } catch (e) {}
     return null;
   });
@@ -20,16 +62,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const savedToken = localStorage.getItem('auditflow_token');
-        const savedUserStr = localStorage.getItem('auditflow_user');
+        const savedToken = getStoredItem('auditflow_token');
+        const savedUserStr = getStoredItem('auditflow_user');
 
         if (savedToken && savedUserStr) {
           try {
             const parsedUser = JSON.parse(savedUserStr);
             setUser(parsedUser);
-          } catch (e) {
-            // fallback
-          }
+            setToken(savedToken);
+          } catch (e) {}
         }
       } catch (err) {
         console.warn('Could not restore auth profile:', err);
@@ -45,8 +86,11 @@ export const AuthProvider = ({ children }) => {
     const res = await api.auth.login(email, password);
     setToken(res.token);
     setUser(res.user);
-    localStorage.setItem('auditflow_token', res.token);
-    localStorage.setItem('auditflow_user', JSON.stringify(res.user));
+
+    setStoredItem('auditflow_token', res.token);
+    setStoredItem('auditflow_user', JSON.stringify(res.user));
+    sessionStorage.setItem('auditflow_view_mode', 'app');
+    sessionStorage.setItem('auditflow_active_tab', 'dashboard');
     return res;
   };
 
@@ -55,8 +99,10 @@ export const AuthProvider = ({ children }) => {
     if (res.token && res.user && res.user.approvalStatus !== 'pending') {
       setToken(res.token);
       setUser(res.user);
-      localStorage.setItem('auditflow_token', res.token);
-      localStorage.setItem('auditflow_user', JSON.stringify(res.user));
+      setStoredItem('auditflow_token', res.token);
+      setStoredItem('auditflow_user', JSON.stringify(res.user));
+      sessionStorage.setItem('auditflow_view_mode', 'app');
+      sessionStorage.setItem('auditflow_active_tab', 'dashboard');
     }
     return res;
   };
@@ -66,7 +112,7 @@ export const AuthProvider = ({ children }) => {
       if (api.auth?.updateProfile) {
         const updated = await api.auth.updateProfile(profileData);
         setUser(updated);
-        localStorage.setItem('auditflow_user', JSON.stringify(updated));
+        setStoredItem('auditflow_user', JSON.stringify(updated));
         return updated;
       }
     } catch (e) {
@@ -74,16 +120,14 @@ export const AuthProvider = ({ children }) => {
     }
     const updated = { ...(user || {}), ...profileData };
     setUser(updated);
-    localStorage.setItem('auditflow_user', JSON.stringify(updated));
+    setStoredItem('auditflow_user', JSON.stringify(updated));
     return updated;
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('auditflow_token');
-    localStorage.removeItem('auditflow_user');
-    localStorage.removeItem('auditflow_demo_role');
+    clearStoredAuth();
   };
 
   const hasRole = (...roles) => {

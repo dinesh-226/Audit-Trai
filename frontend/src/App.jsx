@@ -33,14 +33,35 @@ import { TemperatureMonitoringPage } from './pages/TemperatureMonitoringPage';
 import { ShipTimelinePage } from './pages/ShipTimelinePage';
 import { UsersPage } from './pages/UsersPage';
 
+// Tab-isolated storage helpers to support multi-tab multi-user sessions
+const getTabItem = (key, fallback = null) => {
+  try {
+    if (typeof window === 'undefined') return fallback;
+    return sessionStorage.getItem(key) || localStorage.getItem(key) || fallback;
+  } catch (e) {
+    return fallback;
+  }
+};
+
+const setTabItem = (key, value) => {
+  try {
+    if (typeof window === 'undefined') return;
+    if (value !== null && value !== undefined) {
+      sessionStorage.setItem(key, value);
+    } else {
+      sessionStorage.removeItem(key);
+    }
+  } catch (e) {}
+};
+
 function MainApp() {
   const { user, token, loading, logout } = useAuth();
   
   // High-level view mode: 'app' | 'landing' | 'login' | 'register'
   const [viewMode, setViewMode] = useState(() => {
     try {
-      const savedMode = localStorage.getItem('auditflow_view_mode');
-      const savedToken = localStorage.getItem('auditflow_token');
+      const savedMode = getTabItem('auditflow_view_mode');
+      const savedToken = getTabItem('auditflow_token');
       if (savedToken) {
         if (savedMode === 'login' || savedMode === 'register') return 'app';
         return savedMode || 'app';
@@ -53,34 +74,22 @@ function MainApp() {
 
   const [activeTab, setActiveTab] = useState(() => {
     try {
-      return localStorage.getItem('auditflow_active_tab') || 'dashboard';
+      return getTabItem('auditflow_active_tab') || 'dashboard';
     } catch (e) {
       return 'dashboard';
     }
   });
 
   const [selectedShipId, setSelectedShipId] = useState(() => {
-    try {
-      return localStorage.getItem('auditflow_selected_ship_id') || null;
-    } catch (e) {
-      return null;
-    }
+    return getTabItem('auditflow_selected_ship_id', null);
   });
 
   const [selectedContainerId, setSelectedContainerId] = useState(() => {
-    try {
-      return localStorage.getItem('auditflow_selected_container_id') || null;
-    } catch (e) {
-      return null;
-    }
+    return getTabItem('auditflow_selected_container_id', null);
   });
 
   const [timelineContainerId, setTimelineContainerId] = useState(() => {
-    try {
-      return localStorage.getItem('auditflow_timeline_container_id') || null;
-    } catch (e) {
-      return null;
-    }
+    return getTabItem('auditflow_timeline_container_id', null);
   });
 
   // Modals state
@@ -103,51 +112,29 @@ function MainApp() {
     setShowInspectionModal(true);
   };
 
-  // Persist viewMode
+  // Persist viewMode in current tab
   useEffect(() => {
-    try {
-      localStorage.setItem('auditflow_view_mode', viewMode);
-    } catch (e) {}
+    setTabItem('auditflow_view_mode', viewMode);
   }, [viewMode]);
 
-  // Persist activeTab
+  // Persist activeTab in current tab
   useEffect(() => {
-    try {
-      localStorage.setItem('auditflow_active_tab', activeTab);
-    } catch (e) {}
+    setTabItem('auditflow_active_tab', activeTab);
   }, [activeTab]);
 
-  // Persist selectedShipId
+  // Persist selectedShipId in current tab
   useEffect(() => {
-    try {
-      if (selectedShipId) {
-        localStorage.setItem('auditflow_selected_ship_id', selectedShipId);
-      } else {
-        localStorage.removeItem('auditflow_selected_ship_id');
-      }
-    } catch (e) {}
+    setTabItem('auditflow_selected_ship_id', selectedShipId);
   }, [selectedShipId]);
 
-  // Persist selectedContainerId
+  // Persist selectedContainerId in current tab
   useEffect(() => {
-    try {
-      if (selectedContainerId) {
-        localStorage.setItem('auditflow_selected_container_id', selectedContainerId);
-      } else {
-        localStorage.removeItem('auditflow_selected_container_id');
-      }
-    } catch (e) {}
+    setTabItem('auditflow_selected_container_id', selectedContainerId);
   }, [selectedContainerId]);
 
-  // Persist timelineContainerId
+  // Persist timelineContainerId in current tab
   useEffect(() => {
-    try {
-      if (timelineContainerId) {
-        localStorage.setItem('auditflow_timeline_container_id', timelineContainerId);
-      } else {
-        localStorage.removeItem('auditflow_timeline_container_id');
-      }
-    } catch (e) {}
+    setTabItem('auditflow_timeline_container_id', timelineContainerId);
   }, [timelineContainerId]);
 
   // Global Ctrl+K shortcut for search
@@ -166,7 +153,7 @@ function MainApp() {
   useEffect(() => {
     if (!loading) {
       if ((user || token) && viewMode === 'landing') {
-        const savedMode = localStorage.getItem('auditflow_view_mode');
+        const savedMode = getTabItem('auditflow_view_mode');
         if (savedMode === 'app') {
           setViewMode('app');
         }
@@ -179,13 +166,6 @@ function MainApp() {
 
   const handleSignOut = () => {
     logout();
-    try {
-      localStorage.removeItem('auditflow_view_mode');
-      localStorage.removeItem('auditflow_active_tab');
-      localStorage.removeItem('auditflow_selected_ship_id');
-      localStorage.removeItem('auditflow_selected_container_id');
-      localStorage.removeItem('auditflow_timeline_container_id');
-    } catch (e) {}
     setViewMode('landing');
     setActiveTab('dashboard');
   };
@@ -212,7 +192,7 @@ function MainApp() {
 
   const handleAuthSuccess = (authUser) => {
     setViewMode('app');
-    const savedTab = localStorage.getItem('auditflow_active_tab');
+    const savedTab = getTabItem('auditflow_active_tab');
     setActiveTab(savedTab && savedTab !== 'login' && savedTab !== 'register' ? savedTab : 'dashboard');
   };
 
